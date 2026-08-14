@@ -19,12 +19,12 @@ Supabase  raw_kcw → curated_kcw → public / ops / bank / stock
 
 - **kcw-analytics** extracts PARTS9 on shop PCs, writes Drive, loads `raw_kcw`, runs TAR/VAT/bank Excel. Local SQL Server stays on HQ/SYP machines.
 - **kcw-v2** reads `raw_kcw` / `curated_kcw` / app tables via service-role RPCs (`fn_bi_*`, PO, bank). It enqueues PC work on `ops.job_queue`; it does not run PARTS9.
-- **kcw-api** workers on HQ-PC / SYP-PC poll `ops.job_queue` and run the same BATs/CLI as analytics. LINE and LIFF product-scan talk to this API.
+- **kcw-api** workers on HQ-PC / SYP-PC poll `ops.job_queue` and run the same BATs/CLI as analytics. LINE product scan is camera / album on the Messaging API webhook (not LIFF).
 
 ## Auth and jobs
 
 - v2 login is Supabase email/password + `kcw_user_roles` / page permissions.
-- LINE access is `ops.line_access` in kcw-api; `/liff/*` in v2 is public to Supabase on purpose.
+- LINE access is `ops.line_access` in kcw-api. v2 `/liff/*` is leftover experiment code, not the product-scan path.
 - Background PC work always goes through **`ops.job_queue`** and **`ops.worker_heartbeat`**. Bank Excel upload is an Edge Function, not a PC job.
 
 ## Dictionaries
