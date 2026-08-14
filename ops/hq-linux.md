@@ -136,13 +136,18 @@ Smoke: `ls ~/mnt/gdrive/KCW-Data/kcw_analytics/01_raw` shows `raw_hq_*.csv`.
 
 ### 3. SQL Server ODBC (PARTS9 on KSS)
 
-KSS is on the LAN: **`192.168.1.99:1433`**. Ubuntu 26.04 has no official `msodbcsql18` repo yet — use the **24.04 amd64** package.
+Ubuntu 26.04 has no official `msodbcsql18` repo yet — use the **24.04 amd64** package.
 
 ```bash
 sudo bash scripts/install-mssql-odbc.sh
-# maps 192.168.1.99 → KSS kss KSS.local in /etc/hosts
 odbcinst -q -d    # expect: ODBC Driver 18 for SQL Server
 ```
+
+Do **not** pin `KSS` in `/etc/hosts`. Extract and kcw-api probe a comma list in `PARTS9_HQ_SERVER` / `POS_MSSQL_SERVER`, first TCP 1433 win:
+
+`KSS.local` (LAN mDNS) → `KSS` (NetBIOS/DNS) → `192.168.1.99` (last known HQ LAN IP)
+
+Do **not** put Tailscale `kss-pc` on this list — that is the **SYP** shop PC (`KSS-PC`), a different PARTS9. HQ SQL Server’s Windows name is **KSS**. If HQ KSS joins Tailscale later, add that MagicDNS name (e.g. `kss`) to the comma list.
 
 Windows trusted auth does **not** work from Linux. Use SQL auth (`PARTS9_HQ_USER=python_reader`).
 
@@ -156,7 +161,7 @@ Minimum for extract / TAR / gap-check:
 | `KCW_DRIVE_ROOT` | `/home/<user>/mnt/gdrive` |
 | `KCW_ANALYTICS_DATA_ROOT` | `.../KCW-Data/kcw_analytics` |
 | `MSSQL_ODBC_DRIVER` | `ODBC Driver 18 for SQL Server` |
-| `PARTS9_HQ_SERVER` | `192.168.1.99` or `KSS` after hosts |
+| `PARTS9_HQ_SERVER` | `KSS.local,KSS,192.168.1.99` (first reachable :1433). Not `kss-pc` (SYP). |
 | `PARTS9_HQ_DATABASE` | `PARTS9` |
 | `PARTS9_HQ_USER` / `PARTS9_HQ_PASSWORD` | SQL login |
 | `SUPABASE_DB_URL` | Postgres DSN (pooler), **not** the `https://….supabase.co` API URL |
@@ -196,4 +201,4 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 | 2026-08-14 | Software virtual HDMI/EDID/hotplug: remove and do not rebuild. |
 | 2026-08-14 | NX iPad: EGL capture crash; TCP-only 4000. White screen → restart nxserver. |
 | 2026-08-14 | kcw-analytic Linux: rclone KCW-Data, ODBC 18 from Ubuntu 24.04 package, KSS `192.168.1.99`, venv 3.12 not system 3.14. |
-| 2026-08-14 | Drive mount: user unit `rclone-kcw-data.service` (linger on). One-shot `--daemon` does not survive reboot. |
+| 2026-08-15 | PARTS9 host is a probe list (`KSS.local`, `KSS`, last-known LAN IP). Tailscale `kss-pc` is SYP, not HQ. |
