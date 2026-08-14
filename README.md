@@ -5,7 +5,7 @@ Shared knowledge for the three KCW apps. **Data dictionaries** are the contract 
 | App | Repo | Role |
 |-----|------|------|
 | API / LINE / PC workers | [kcw-api](https://github.com/pthengtr/kcw-api) | FastAPI, LINE webhook, HQ/SYP workers polling `ops.job_queue` |
-| Web ERP / BI | [kcw-v2](https://github.com/pthengtr/kcw-v2) | Next.js back-office, BI RPCs, bank upload, LIFF |
+| Web ERP / BI | [kcw-v2](https://github.com/pthengtr/kcw-v2) | Next.js back-office, BI RPCs, bank upload |
 | Extract / TAR / reports | [kcw-analytics](https://github.com/pthengtr/kcw-analytics) | PARTS9 → Drive → Supabase, BATs, notebooks |
 
 ## Start here

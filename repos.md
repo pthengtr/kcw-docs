@@ -19,7 +19,8 @@ Use dictionaries for ICMAS / product codes when LINE or scan features touch `BCO
 
 - Next.js ERP/BI UI and API routes
 - RPC SQL snapshots under `docs/bi/sql/`
-- App-only docs: worker jobs, bank-statement upload, LIFF, stock-audit, product-image KPI
+- App-only docs: worker jobs, bank-statement upload, stock-audit, product-image KPI
+- LINE product scan lives in kcw-api (`docs/product-scan.md`); v2 LIFF scan is retired
 
 Dictionaries used to live in `docs/bi/*-data-dictionary.md`. Those paths are now stubs that point here.
 
