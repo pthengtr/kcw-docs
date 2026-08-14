@@ -4,8 +4,9 @@
 
 - Data dictionaries (canonical)
 - Cross-repo architecture and the map of the three apps
+- Machine runbooks under [ops/](./ops/README.md) (Linux HQ box, remote access)
 
-Do not put `.env` examples, SQL migrations, or “how to run npm/python” here.
+Do not put `.env` values, SQL migrations, or per-app “how to run npm/python” here. Point at the app README for CLI details.
 
 ## [kcw-api](https://github.com/pthengtr/kcw-api)
 

@@ -13,5 +13,6 @@ Shared knowledge for the three KCW apps. **Data dictionaries** are the contract 
 - [Data dictionaries](./dictionaries/README.md) — shared business meaning (sales, ICMAS, PO, ICLOW, VAT, …)
 - [Architecture](./architecture.md) — how the three repos share Supabase, Drive, LINE, and workers
 - [What lives where](./repos.md)
+- [Ops / Linux HQ-PC](./ops/hq-linux.md) — remote access, GDM on demand, kcw-analytics Linux setup, dead ends (Jump, virtual monitor)
 
 Local clone on this machine: `/home/hqadmin/projects/kcw-docs` (sibling of the three app repos).
