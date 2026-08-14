@@ -115,11 +115,15 @@ Do **not** use Google Drive for Desktop / DriveFS AppData cache paths.
 ```bash
 # rclone in ~/.local/bin (v1.75.0 on the reference box)
 rclone config    # remote name: kcw   (Google Drive, Shared drives)
-mkdir -p ~/mnt/gdrive/KCW-Data
-bash scripts/mount-kcw-drive.sh
+sudo loginctl enable-linger "$USER"   # so the user unit starts without GDM
+bash scripts/mount-kcw-drive.sh       # installs + starts rclone-kcw-data.service
 ```
 
-The mount script uses remote `kcw` and Shared drive id `0AJ5BTDhgit7-Uk9PVA` (KCW-Data). First-time OAuth needs a browser (start GDM, or copy the `127.0.0.1` auth URL to another machine).
+The mount script copies [`scripts/rclone-kcw-data.service`](https://github.com/pthengtr/kcw-analytics/blob/main/scripts/rclone-kcw-data.service) into `~/.config/systemd/user/` and enables it. Do **not** use a one-shot `rclone mount --daemon` as the daily path — it dies on reboot.
+
+Shared drive id `0AJ5BTDhgit7-Uk9PVA` (KCW-Data). First-time OAuth needs a browser (start GDM, or copy the `127.0.0.1` auth URL to another machine).
+
+rclone still warns that the **shared Google client_id is retired during 2026**. Put your own Drive `client_id` / `client_secret` in `~/.config/rclone/rclone.conf` when you can; empty values keep using rclone’s default.
 
 `paths.yaml` (gitignored):
 
@@ -192,3 +196,4 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 | 2026-08-14 | Software virtual HDMI/EDID/hotplug: remove and do not rebuild. |
 | 2026-08-14 | NX iPad: EGL capture crash; TCP-only 4000. White screen → restart nxserver. |
 | 2026-08-14 | kcw-analytic Linux: rclone KCW-Data, ODBC 18 from Ubuntu 24.04 package, KSS `192.168.1.99`, venv 3.12 not system 3.14. |
+| 2026-08-14 | Drive mount: user unit `rclone-kcw-data.service` (linger on). One-shot `--daemon` does not survive reboot. |
