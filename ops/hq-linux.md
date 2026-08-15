@@ -163,18 +163,57 @@ Minimum for extract / TAR / gap-check:
 | `MSSQL_ODBC_DRIVER` | `ODBC Driver 18 for SQL Server` |
 | `PARTS9_HQ_SERVER` | `KSS.local,KSS,192.168.1.99` (first reachable :1433). Not `kss-pc` (SYP). |
 | `PARTS9_HQ_DATABASE` | `PARTS9` |
-| `PARTS9_HQ_USER` / `PARTS9_HQ_PASSWORD` | SQL login |
+| `PARTS9_HQ_USER` / `PARTS9_HQ_PASSWORD` | SQL login (`python_reader` is **SQL only**, not the Windows file share) |
 | `SUPABASE_DB_URL` | Postgres DSN (pooler), **not** the `https://….supabase.co` API URL |
+| `LEGACY_PRODUCT_IMAGE_DIR` | Linux: POSIX mount `~/mnt/kss/PARTS9/Picture`. Windows HQ-PC keeps `\\KSS\KAcc9\PARTS9\Picture` |
+| `KSS_SMB_HOST` | Same list as `PARTS9_HQ_SERVER`. Probe **TCP 445**, do not pin one LAN IP in config |
+| `KSS_SMB_SHARE` / `KSS_SMB_USER` / `KSS_SMB_PASSWORD` | Windows share login for `KAcc9` (gitignored `.env`). Also stored in rclone remote `kss` |
 
 Copy from `.env.example` and from the existing HQ Windows `.env` (or the Drive backup zip if you still keep one). Do not paste secrets into this markdown.
 
-### 5. What is ready vs not
+### 5. PARTS9 Picture share (product images)
+
+Windows HQ-PC uses UNC `\\KSS\KAcc9\PARTS9\Picture`. Linux cannot write that path (it would mkdir a fake local folder).
+
+Same PC as HQ SQL (`KSS` at LAN, last-known `192.168.1.99`). Guest SMB is **disabled**. Need a Windows admin/share login, not `python_reader`.
+
+```bash
+rclone config create kss smb host KSS.local user <windows-user> pass <windows-pass> domain WORKGROUP
+# Install user unit from kcw-analytic:
+cp scripts/rclone-kss-picture.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now rclone-kss-picture.service
+ls ~/mnt/kss/PARTS9/Picture | head
+```
+
+Mount wrapper [`scripts/rclone-kss-picture-mount.sh`](https://github.com/pthengtr/kcw-analytics/blob/main/scripts/rclone-kss-picture-mount.sh) calls [`scripts/pick_kss_host.py`](https://github.com/pthengtr/kcw-analytics/blob/main/scripts/pick_kss_host.py): first host in `KSS_SMB_HOST` with TCP **445** open (same idea as SQL on **1433**). rclone’s Go DNS cannot resolve `.local` / NetBIOS, so the wrapper passes the **system-resolved IP at mount time** via `--smb-host`. Do **not** hardcode `192.168.1.99` in `.env` or the unit file.
+
+`sync_product_images.py` must see a real POSIX directory. `PRODUCT_IMAGE_DELETE_MODE=quarantine` writes `_deleted/` on that share — this is the live PARTS9 Picture folder.
+
+### 6. Linux worker job scripts (not the queue yet)
+
+Windows BATs in `worker_tasks/*.bat` stay on HQ-PC / Task Scheduler. This box has POSIX stand-ins in `worker_tasks/linux/` (HQ A/B, inventory, online sales, bank, PO-related, product images). Executed notebooks go to **local** `kcw-analytic/logs/`, not Drive FUSE.
+
+This machine’s **gitignored** `kcw-api/.env`:
+
+- `WORKER_NAME=HQ-UBUNTU-SERVER` — LINE/web still enqueue `HQ-PC`, so this process would not steal jobs even if started
+- `WORKER_COMMAND_TIMEOUT_SECONDS=7200` (default **1800** = 30 minutes is too short for HQ B PDFs)
+- `WORKER_JOB_*_COMMAND` points at `worker_tasks/linux/*.sh`
+
+**Do not start** `python -m src.jobs.worker` until kcw-api / kcw-v2 enqueue is switched on purpose. Dual-run with HQ-PC Task Scheduler on the same job types is the cutover risk, not a Linux dry-run of the scripts.
+
+Extra venv packages vs a thin Windows Anaconda install: `pytz`, `weasyprint`, `openpyxl`, `supabase` (in `requirements.txt`). Repo folder `kcw-analytic/supabase/` is SQL/functions — it shadows the PyPI client if you put the repo on `PYTHONPATH` / `sys.path[0]`.
+
+### 7. What is ready vs not
 
 | Need | Ready when |
 |------|------------|
 | Read Drive CSVs / notebooks | rclone mount + `paths.yaml` |
 | PARTS9 extract | ODBC + LAN 1433 + SQL auth env |
 | TAR / `gap-check` / upload | `SUPABASE_DB_URL` |
+| Product image sync | rclone SMB `kss` + Picture mount + `LEGACY_PRODUCT_IMAGE_DIR` POSIX |
+| Manual Linux job scripts | `worker_tasks/linux/*.sh` |
+| Queue worker claiming LINE/web jobs | **Later** — change enqueue `worker_name` + start kcw-api worker |
 
 Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analytic README). Shop BATs stay on Windows Task Scheduler until this box is the worker.
 
@@ -188,7 +227,8 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 4. NoMachine: physical desktop; `EnableEGLCapture 0`; `nxserver` enabled.
 5. Clone `~/projects/{kcw-api,kcw-v2,kcw-analytic,kcw-docs}`.
 6. Analytics: Python 3.12 venv, rclone Shared Drive, ODBC 18, `.env` / `paths.yaml`.
-7. Confirm: `systemctl get-default` is `multi-user.target`; `start gdm` then NoMachine from Windows.
+7. Picture share: rclone SMB remote `kss`, user unit `rclone-kss-picture.service`, POSIX `LEGACY_PRODUCT_IMAGE_DIR`.
+8. Confirm: `systemctl get-default` is `multi-user.target`; `start gdm` then NoMachine from Windows. Do **not** start the kcw-api queue worker until enqueue points here.
 
 ---
 
@@ -202,3 +242,5 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 | 2026-08-14 | NX iPad: EGL capture crash; TCP-only 4000. White screen → restart nxserver. |
 | 2026-08-14 | kcw-analytic Linux: rclone KCW-Data, ODBC 18 from Ubuntu 24.04 package, KSS `192.168.1.99`, venv 3.12 not system 3.14. |
 | 2026-08-15 | PARTS9 host is a probe list (`KSS.local`, `KSS`, last-known LAN IP). Tailscale `kss-pc` is SYP, not HQ. |
+| 2026-08-15 | Product images: mount `KAcc9/PARTS9/Picture` via rclone SMB; probe TCP 445 with the same host list; do not pin LAN IP. `python_reader` cannot open the share. |
+| 2026-08-15 | Linux job wrappers in `worker_tasks/linux/`. Default worker timeout 1800s is 30 min — too short for HQ B. Queue worker not started (`WORKER_NAME=HQ-UBUNTU-SERVER`). |
