@@ -200,7 +200,19 @@ This machine’s **gitignored** `kcw-api/.env`:
 - `WORKER_COMMAND_TIMEOUT_SECONDS=7200` (default **1800** = 30 minutes is too short for HQ B PDFs)
 - `WORKER_JOB_*_COMMAND` points at `worker_tasks/linux/*.sh`
 
-**Do not start** `python -m src.jobs.worker` until kcw-api / kcw-v2 enqueue is switched on purpose. Dual-run with HQ-PC Task Scheduler on the same job types is the cutover risk, not a Linux dry-run of the scripts.
+**Do not start** `python -m src.jobs.worker` until kcw-api / kcw-v2 enqueue is switched on purpose.
+
+HQ B on this box is a **systemd user timer** at **21:00 Asia/Bangkok**, after HQ-PC’s daily HQ B (~19:00). Both write the same Drive/Supabase targets so we can compare; turn off HQ-PC Task Scheduler when this box is trusted.
+
+```bash
+cp scripts/kcw-hq-full.{service,timer} ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now kcw-hq-full.timer
+systemctl --user list-timers kcw-hq-full.timer
+# logs: ~/projects/kcw-analytic/logs/hq_full.systemd.log
+```
+
+`Persistent=false` — if the box is down at 21:00 it does **not** catch up on boot (avoids a surprise overwrite). Timeout 3 hours. Queue worker stays off during this dual-run.
 
 Extra venv packages vs a thin Windows Anaconda install: `pytz`, `weasyprint`, `openpyxl`, `supabase` (in `requirements.txt`). Repo folder `kcw-analytic/supabase/` is SQL/functions — it shadows the PyPI client if you put the repo on `PYTHONPATH` / `sys.path[0]`.
 
@@ -213,6 +225,7 @@ Extra venv packages vs a thin Windows Anaconda install: `pytz`, `weasyprint`, `o
 | TAR / `gap-check` / upload | `SUPABASE_DB_URL` |
 | Product image sync | rclone SMB `kss` + Picture mount + `LEGACY_PRODUCT_IMAGE_DIR` POSIX |
 | Manual Linux job scripts | `worker_tasks/linux/*.sh` |
+| Scheduled HQ B | user timer `kcw-hq-full.timer` at 21:00 Asia/Bangkok |
 | Queue worker claiming LINE/web jobs | **Later** — change enqueue `worker_name` + start kcw-api worker |
 
 Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analytic README). Shop BATs stay on Windows Task Scheduler until this box is the worker.
@@ -228,7 +241,8 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 5. Clone `~/projects/{kcw-api,kcw-v2,kcw-analytic,kcw-docs}`.
 6. Analytics: Python 3.12 venv, rclone Shared Drive, ODBC 18, `.env` / `paths.yaml`.
 7. Picture share: rclone SMB remote `kss`, user unit `rclone-kss-picture.service`, POSIX `LEGACY_PRODUCT_IMAGE_DIR`.
-8. Confirm: `systemctl get-default` is `multi-user.target`; `start gdm` then NoMachine from Windows. Do **not** start the kcw-api queue worker until enqueue points here.
+8. Enable `kcw-hq-full.timer` (21:00 Asia/Bangkok) only if this box should run HQ B. Keep HQ-PC scheduler until Linux is trusted.
+9. Confirm: `systemctl get-default` is `multi-user.target`; `start gdm` then NoMachine from Windows. Do **not** start the kcw-api queue worker until enqueue points here.
 
 ---
 
@@ -244,3 +258,4 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 | 2026-08-15 | PARTS9 host is a probe list (`KSS.local`, `KSS`, last-known LAN IP). Tailscale `kss-pc` is SYP, not HQ. |
 | 2026-08-15 | Product images: mount `KAcc9/PARTS9/Picture` via rclone SMB; probe TCP 445 with the same host list; do not pin LAN IP. `python_reader` cannot open the share. |
 | 2026-08-15 | Linux job wrappers in `worker_tasks/linux/`. Default worker timeout 1800s is 30 min — too short for HQ B. Queue worker not started (`WORKER_NAME=HQ-UBUNTU-SERVER`). |
+| 2026-08-15 | Dual-run HQ B: HQ-PC ~19:00, Linux `kcw-hq-full.timer` 21:00 Asia/Bangkok. Remove HQ-PC scheduler after this box is stable. |
