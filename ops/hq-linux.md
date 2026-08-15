@@ -164,6 +164,8 @@ Minimum for extract / TAR / gap-check:
 | `PARTS9_HQ_SERVER` | `KSS.local,KSS,192.168.1.99` (first reachable :1433). Not `kss-pc` (SYP). |
 | `PARTS9_HQ_DATABASE` | `PARTS9` |
 | `PARTS9_HQ_USER` / `PARTS9_HQ_PASSWORD` | SQL login (`python_reader` is **SQL only**, not the Windows file share) |
+| `PARTS9_SYP_SERVER` | Tailscale MagicDNS `kss-pc` (SYP `KSS-PC`). Not on the HQ host list. |
+| `PARTS9_SYP_USER` / `PARTS9_SYP_PASSWORD` | Same SQL login as HQ (`python_reader`). Windows trusted auth does not work from Linux. |
 | `SUPABASE_DB_URL` | Postgres DSN (pooler), **not** the `https://….supabase.co` API URL |
 | `LEGACY_PRODUCT_IMAGE_DIR` | Linux: POSIX mount `~/mnt/kss/PARTS9/Picture`. Windows HQ-PC keeps `\\KSS\KAcc9\PARTS9\Picture` |
 | `KSS_SMB_HOST` | Same list as `PARTS9_HQ_SERVER`. Probe **TCP 445**, do not pin one LAN IP in config |
@@ -192,7 +194,7 @@ Mount wrapper [`scripts/rclone-kss-picture-mount.sh`](https://github.com/pthengt
 
 ### 6. Linux worker job scripts (not the queue yet)
 
-Windows BATs in `worker_tasks/*.bat` stay on HQ-PC / Task Scheduler. This box has POSIX stand-ins in `worker_tasks/linux/` (HQ A/B, inventory, online sales, bank, PO-related, product images). Executed notebooks go to **local** `kcw-analytic/logs/`, not Drive FUSE.
+Windows BATs in `worker_tasks/*.bat` stay on HQ-PC / Task Scheduler. This box has POSIX stand-ins in `worker_tasks/linux/` (HQ A/B including SYP extract over Tailscale, inventory, online sales, bank, PO-related, product images). Executed notebooks go to **local** `kcw-analytic/logs/`, not Drive FUSE.
 
 This machine’s **gitignored** `kcw-api/.env`:
 
@@ -203,6 +205,8 @@ This machine’s **gitignored** `kcw-api/.env`:
 **Do not start** `python -m src.jobs.worker` until kcw-api / kcw-v2 enqueue is switched on purpose.
 
 HQ B on this box is a **systemd user timer** at **21:00 Asia/Bangkok**, after HQ-PC’s daily HQ B (~19:00). Both write the same Drive/Supabase targets so we can compare; turn off HQ-PC Task Scheduler when this box is trusted.
+
+Linux HQ A (`hq_raw.sh`, also the first step of HQ B) extracts **SYP then HQ** (`syp_raw.sh` → `extract --site hq` → `upload-daily-raw`). SYP PARTS9 is `kss-pc:1433` on the tailnet — do **not** wait for the shop PC’s Task Scheduler. If `kss-pc` is offline the step fails (same as a missed SYP BAT).
 
 ```bash
 cp scripts/kcw-hq-full.{service,timer} ~/.config/systemd/user/
@@ -221,7 +225,7 @@ Extra venv packages vs a thin Windows Anaconda install: `pytz`, `weasyprint`, `o
 | Need | Ready when |
 |------|------------|
 | Read Drive CSVs / notebooks | rclone mount + `paths.yaml` |
-| PARTS9 extract | ODBC + LAN 1433 + SQL auth env |
+| PARTS9 extract | ODBC + HQ LAN 1433 + SYP Tailscale `kss-pc:1433` + SQL auth env |
 | TAR / `gap-check` / upload | `SUPABASE_DB_URL` |
 | Product image sync | rclone SMB `kss` + Picture mount + `LEGACY_PRODUCT_IMAGE_DIR` POSIX |
 | Manual Linux job scripts | `worker_tasks/linux/*.sh` |
@@ -295,3 +299,4 @@ Register the runner in both GitHub repos (or the org, limited to these two). LIN
 | 2026-08-15 | Linux job wrappers in `worker_tasks/linux/`. Default worker timeout 1800s is 30 min — too short for HQ B. Queue worker not started (`WORKER_NAME=HQ-UBUNTU-SERVER`). |
 | 2026-08-15 | kcw-api user units: worker, tiger-pay :8000, stock-check :8787. HQ enqueue prefers `HQ-UBUNTU-SERVER` if live. LINE companion uses same HMAC token as stock-check. |
 | 2026-08-15 | PARTS9 explorer :8788; worker heartbeat `explorer_public_base_url`; LINE `parts9` / `ค้นหา` / `สำรวจ`. Photos from Supabase `pictures/product`. |
+| 2026-08-15 | Daily HQ A/B on this box extracts SYP over Tailscale (`kss-pc`) — no wait on SYP Task Scheduler. |
