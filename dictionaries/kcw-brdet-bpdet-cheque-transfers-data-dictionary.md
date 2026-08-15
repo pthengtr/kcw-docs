@@ -6,9 +6,9 @@ Upstream analytic docs: [`kcw-analytics/docs/parts9_cheque_transfers.md`](https:
 
 Status legend: **Confirmed** · **TBD** · **Inferred**
 
-Last reviewed: 2026-08-03
+Last reviewed: 2026-08-16
 
-**Related:** bank statement upload ([worker-jobs](https://github.com/pthengtr/kcw-v2/blob/master/docs/worker-jobs.md#bank-statement-upload-from-bank-statement-sync-kcw-v2--not-a-pc-worker-job)); payment vouchers `PVMAS` / receipt vouchers `RVMAS`; purchase bills [`PIMAS`](./kcw-purchase-data-dictionary.md).
+**Related:** bank statement upload ([worker-jobs](https://github.com/pthengtr/kcw-v2/blob/master/docs/worker-jobs.md#bank-statement-upload-from-bank-statement-sync-kcw-v2--not-a-pc-worker-job)); payment **notes / vouchers** [`PVMAS` / `RVMAS`](./kcw-pvmas-rvmas-notes-vouchers-data-dictionary.md); purchase bills [`PIMAS`](./kcw-purchase-data-dictionary.md).
 
 ---
 
@@ -49,7 +49,7 @@ Related but different:
 
 | Table | Role |
 |-------|------|
-| `PVMAS` / `RVMAS` | Payment / receipt voucher **headers** (totals, AP/AR account) |
+| `PVMAS` / `RVMAS` | Pay / receive **note then voucher** headers — [notes/vouchers dictionary](./kcw-pvmas-rvmas-notes-vouchers-data-dictionary.md). `BPDET` only exists after `PVMAS.VOUCNO` is issued |
 | `BKTRNS` | Bank statement / reconciliation lines (PARTS9) |
 | `CHMAS` | Chart / bank **account master** (`TASK='BK'`, accounts like `2101.x`) — not register lines |
 | `bank.statement_*` | Drive bank Excel import (KBANK/KTB) used by `/bank-statement-sync` |
@@ -167,3 +167,4 @@ Focused cheque-only BAT (no statement Excel): `run_hq_brdet_bpdet_sync.bat` (not
 | Date | Change | Who |
 |------|--------|-----|
 | 2026-08-03 | Integrate analytic `parts9_cheque_transfers` + bank BAT includes BRDET/BPDET; HQ-only enqueue | Agent |
+| 2026-08-16 | Point `PVMAS` at notes-before-voucher dictionary; `BPDET` only after voucher | Agent |

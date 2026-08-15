@@ -10,7 +10,7 @@ Status legend:
 - **TBD** — needs owner confirmation before using in metrics
 - **Inferred** — looks true from data patterns; not yet locked
 
-Last reviewed: 2026-07-26
+Last reviewed: 2026-08-16
 
 ---
 
@@ -197,8 +197,8 @@ One row per bill. Use for bill count, bill totals (before/after tax), payment st
 | `RE` | ? | TBD | |
 | `TERM` | Credit term (days?) | TBD | e.g. `30.0` |
 | `DUEDATE` | Due date | TBD | |
-| `NOTEDATE` / `NOTENO` | Note refs | TBD | |
-| `VOUCDATE1` / `VOUCNO1` / `VOUCDATE2` / `VOUCNO2` | Voucher refs | TBD | |
+| `NOTEDATE` / `NOTENO` | AR **note** refs (same pattern as AP `PIMAS`/`PVMAS`) | Confirmed (name) | HQ ~12.8k bills with `NOTENO`. Join to `RVMAS` not locked — [notes/vouchers](./kcw-pvmas-rvmas-notes-vouchers-data-dictionary.md) |
+| `VOUCDATE1` / `VOUCNO1` / `VOUCDATE2` / `VOUCNO2` | Receipt voucher refs | Confirmed (shape) | `VOUCNO2` is the used slot (HQ ~65.8k); `VOUCNO1` unused (0). Parallel to `PIMAS.VOUCNO2` |
 | `POSTED1` / `POSTED2` | Posted flags | TBD | |
 | `REMARKS` | Remarks | TBD | |
 | `CANCELED` | Canceled flag | Confirmed | `Y` / `N` |
@@ -883,6 +883,7 @@ Walk-in totals may be reported separately but are outside the ranking set.
 | 2026-07-27 | Cross-link ARMAS/APMAS; `MOBILE` = tax id (see ar-ap dictionary) | Owner |
 | 2026-08-08 | Exclude `CNTF`/`3CNTF` transfer credit notes from sales revenue; add `fn_bi_sales_bill_excluded_from_revenue`; document curated split guidance | Owner + Cursor |
 | 2026-07-27 | Customer name fallback: party → ARMAS → blank; expose `name_source` | Owner + Cursor |
+| 2026-08-16 | `SIMAS.NOTENO` / `VOUCNO2` are AR note/voucher stamps (same names as `PIMAS`); link PVMAS/RVMAS dictionary | Cursor |
 
 ---
 
