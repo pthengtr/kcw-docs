@@ -17,6 +17,7 @@ Status legend in each file: **Confirmed** · **TBD** · **Inferred**. When a rul
 | [kcw-po-data-dictionary.md](./kcw-po-data-dictionary.md) | Purchase **orders** in `raw_kcw` (HQ+SYP); PO id = `DOCNO`; SYP prepare = `po_syp_prepare` |
 | [kcw-iclow-pending-receive-data-dictionary.md](./kcw-iclow-pending-receive-data-dictionary.md) | PARTS9 **ค้างรับ** = `ICLOW` (`ORDERED`/`RECEIVED`/`CANCELED`) |
 | [kcw-brdet-bpdet-cheque-transfers-data-dictionary.md](./kcw-brdet-bpdet-cheque-transfers-data-dictionary.md) | PARTS9 **ทะเบียนเช็ครับ/จ่าย** = `BRDET`/`BPDET` (`CHKNO` = cheque # or method label) |
+| [kcw-pvmas-rvmas-notes-vouchers-data-dictionary.md](./kcw-pvmas-rvmas-notes-vouchers-data-dictionary.md) | PARTS9 **โน้ต / ใบสำคัญจ่าย-รับ** = `PVMAS`/`RVMAS` (note before voucher; bills on `PIMAS`) |
 | [kcw-product-movement-data-dictionary.md](./kcw-product-movement-data-dictionary.md) | Stock-more + dead-stock aging rules |
 
 v2 BI pages and RPC SQL remain in [kcw-v2/docs/bi](https://github.com/pthengtr/kcw-v2/blob/master/docs/bi/README.md). Analytics extract notes remain in [kcw-analytics/docs](https://github.com/pthengtr/kcw-analytics/tree/main/docs).

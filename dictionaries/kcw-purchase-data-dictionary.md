@@ -3,11 +3,11 @@
 Source of truth for **HQ purchase invoice lines** (received bills) used by product-movement BI.  
 Table: `raw_kcw.raw_hq_pidet_purchase_lines` (staging twin `_stg` — do not report from).
 
-**Related:** purchase **orders** (`POMAS`/`PODET`) are documented separately in [kcw-po-data-dictionary.md](./kcw-po-data-dictionary.md). PIDET = invoices; POMAS = orders.
+**Related:** purchase **orders** (`POMAS`/`PODET`) are documented separately in [kcw-po-data-dictionary.md](./kcw-po-data-dictionary.md). PIDET = invoices; POMAS = orders. Pay **notes / vouchers** (`PVMAS`) and how they stamp `PIMAS` are in [kcw-pvmas-rvmas-notes-vouchers-data-dictionary.md](./kcw-pvmas-rvmas-notes-vouchers-data-dictionary.md).
 
 Status legend: **Confirmed** · **TBD** · **Inferred**
 
-Last reviewed: 2026-07-28
+Last reviewed: 2026-08-16
 
 ---
 
@@ -83,7 +83,28 @@ See [kcw-product-movement-data-dictionary.md](./kcw-product-movement-data-dictio
 
 ---
 
-## 6. Changelog
+## 6. Header links to notes / payment vouchers (`PIMAS`) (Confirmed)
+
+`PIMAS` is the purchase **bill header**. PARTS9 does not store pay-note lines on `PVMAS`. The same supplier note number is copied onto the bill, then the payment voucher number is stamped when paid.
+
+| `PIMAS` column | Meaning | Status |
+|----------------|---------|--------|
+| `NOTENO` / `NOTEDATE` | Supplier note (same value as `PVMAS.NOTENO`) | Confirmed |
+| `VOUCNO2` / `VOUCDATE2` | Payment voucher (`PVMAS.VOUCNO`, e.g. `KCPN*` / `P*`) — **main link** | Confirmed |
+| `VOUCNO1` / `VOUCDATE1` | Extra voucher slot — almost unused | Confirmed (24 HQ rows) |
+
+Join:
+
+```text
+note →   PIMAS.NOTENO  = PVMAS.NOTENO     (and sometimes PIMAS.BILLNO = NOTENO)
+voucher → PIMAS.VOUCNO2 = PVMAS.VOUCNO
+```
+
+One note/voucher can cover many bills. Full counts and explorer lookup rules: [notes/vouchers dictionary](./kcw-pvmas-rvmas-notes-vouchers-data-dictionary.md).
+
+---
+
+## 7. Changelog
 
 | Date | Change |
 |------|--------|
@@ -91,3 +112,4 @@ See [kcw-product-movement-data-dictionary.md](./kcw-product-movement-data-dictio
 | 2026-07-27 | Link AP master; note APMAS `MOBILE` = tax id |
 | 2026-07-28 | Clarify PIDET = invoices vs POMAS/PODET orders; link PO dictionary |
 | 2026-07-28 | PO orders now in `raw_kcw` (HQ + SYP); link worker sync |
+| 2026-08-16 | Document `PIMAS.NOTENO` / `VOUCNO2` links to `PVMAS` (note before voucher) |
