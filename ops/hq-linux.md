@@ -248,20 +248,21 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 
 ## kcw-api services on this box
 
-Not Docker. Three **systemd user** units (`Restart=always`, `RestartSec=5`), linger already on:
+Not Docker. Four **systemd user** units (`Restart=always`, `RestartSec=5`), linger already on:
 
 | Unit | Port | Command |
 |------|------|---------|
 | `kcw-worker.service` | — | `python -m src.jobs.worker` (`WORKER_NAME=HQ-UBUNTU-SERVER`) |
 | `kcw-tiger-pay.service` | 8000 | uvicorn `app.main:app` |
 | `kcw-stock-check.service` | 8787 | uvicorn `app.stock_check_app:app` |
+| `kcw-parts9-explorer.service` | 8788 | uvicorn `app.parts9_explorer_app:app` |
 
 Repo copies: `~/projects/kcw-api/scripts/systemd/`. Enable:
 
 ```bash
 cp ~/projects/kcw-api/scripts/systemd/kcw-*.service ~/.config/systemd/user/
 systemctl --user daemon-reload
-systemctl --user enable --now kcw-worker kcw-tiger-pay kcw-stock-check
+systemctl --user enable --now kcw-worker kcw-tiger-pay kcw-stock-check kcw-parts9-explorer
 journalctl --user -u kcw-worker -f
 ```
 
@@ -273,7 +274,7 @@ LINE `เช็คสต็อก` and `ไทเกอร์` / `tiger pay` pre
 
 CI/CD: self-hosted GitHub runner labeled `self-hosted, linux, hq` on this machine. Workflows:
 
-- kcw-api `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull, pip, restart tiger-pay + stock-check; worker left running unless `FORCE_WORKER_RESTART=1`)
+- kcw-api `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull, pip, restart tiger-pay + stock-check + parts9-explorer; worker left running unless `FORCE_WORKER_RESTART=1`)
 - kcw-analytic `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull + pip only)
 
 Register the runner in both GitHub repos (or the org, limited to these two). LINE still deploys on Railway from kcw-api `master`.
@@ -293,3 +294,4 @@ Register the runner in both GitHub repos (or the org, limited to these two). LIN
 | 2026-08-15 | Product images: mount `KAcc9/PARTS9/Picture` via rclone SMB; probe TCP 445 with the same host list; do not pin LAN IP. `python_reader` cannot open the share. |
 | 2026-08-15 | Linux job wrappers in `worker_tasks/linux/`. Default worker timeout 1800s is 30 min — too short for HQ B. Queue worker not started (`WORKER_NAME=HQ-UBUNTU-SERVER`). |
 | 2026-08-15 | kcw-api user units: worker, tiger-pay :8000, stock-check :8787. HQ enqueue prefers `HQ-UBUNTU-SERVER` if live. LINE companion uses same HMAC token as stock-check. |
+| 2026-08-15 | PARTS9 explorer :8788; worker heartbeat `explorer_public_base_url`; LINE `parts9` / `ค้นหา` / `สำรวจ`. Photos from Supabase `pictures/product`. |
