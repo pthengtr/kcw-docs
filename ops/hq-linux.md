@@ -242,7 +242,41 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 6. Analytics: Python 3.12 venv, rclone Shared Drive, ODBC 18, `.env` / `paths.yaml`.
 7. Picture share: rclone SMB remote `kss`, user unit `rclone-kss-picture.service`, POSIX `LEGACY_PRODUCT_IMAGE_DIR`.
 8. Enable `kcw-hq-full.timer` (21:00 Asia/Bangkok) only if this box should run HQ B. Keep HQ-PC scheduler until Linux is trusted.
-9. Confirm: `systemctl get-default` is `multi-user.target`; `start gdm` then NoMachine from Windows. Do **not** start the kcw-api queue worker until enqueue points here.
+9. Confirm: `systemctl get-default` is `multi-user.target`; `start gdm` then NoMachine from Windows.
+
+---
+
+## kcw-api services on this box
+
+Not Docker. Three **systemd user** units (`Restart=always`, `RestartSec=5`), linger already on:
+
+| Unit | Port | Command |
+|------|------|---------|
+| `kcw-worker.service` | — | `python -m src.jobs.worker` (`WORKER_NAME=HQ-UBUNTU-SERVER`) |
+| `kcw-tiger-pay.service` | 8000 | uvicorn `app.main:app` |
+| `kcw-stock-check.service` | 8787 | uvicorn `app.stock_check_app:app` |
+
+Repo copies: `~/projects/kcw-api/scripts/systemd/`. Enable:
+
+```bash
+cp ~/projects/kcw-api/scripts/systemd/kcw-*.service ~/.config/systemd/user/
+systemctl --user daemon-reload
+systemctl --user enable --now kcw-worker kcw-tiger-pay kcw-stock-check
+journalctl --user -u kcw-worker -f
+```
+
+kcw-api venv is Python **3.11** at `~/projects/kcw-api/.venv` (`WORKER_PYTHON` points here). Analytic jobs still use the 3.12 analytic venv.
+
+HQ jobs: if this worker heartbeat is live, LINE/web assign `HQ-UBUNTU-SERVER`; else `HQ-PC`. Unassigned jobs can still be claimed here. Do not rename this process to `HQ-PC` while Windows is running.
+
+LINE `เช็คสต็อก` and `ไทเกอร์` / `tiger pay` prefer this box’s URLs when the heartbeat is online. Companion on Linux requires the LINE token (`COMPANION_REQUIRE_LINE_AUTH=true`).
+
+CI/CD: self-hosted GitHub runner labeled `self-hosted, linux, hq` on this machine. Workflows:
+
+- kcw-api `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull, pip, restart tiger-pay + stock-check; worker left running unless `FORCE_WORKER_RESTART=1`)
+- kcw-analytic `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull + pip only)
+
+Register the runner in both GitHub repos (or the org, limited to these two). LINE still deploys on Railway from kcw-api `master`.
 
 ---
 
@@ -258,4 +292,4 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 | 2026-08-15 | PARTS9 host is a probe list (`KSS.local`, `KSS`, last-known LAN IP). Tailscale `kss-pc` is SYP, not HQ. |
 | 2026-08-15 | Product images: mount `KAcc9/PARTS9/Picture` via rclone SMB; probe TCP 445 with the same host list; do not pin LAN IP. `python_reader` cannot open the share. |
 | 2026-08-15 | Linux job wrappers in `worker_tasks/linux/`. Default worker timeout 1800s is 30 min — too short for HQ B. Queue worker not started (`WORKER_NAME=HQ-UBUNTU-SERVER`). |
-| 2026-08-15 | Dual-run HQ B: HQ-PC ~19:00, Linux `kcw-hq-full.timer` 21:00 Asia/Bangkok. Remove HQ-PC scheduler after this box is stable. |
+| 2026-08-15 | kcw-api user units: worker, tiger-pay :8000, stock-check :8787. HQ enqueue prefers `HQ-UBUNTU-SERVER` if live. LINE companion uses same HMAC token as stock-check. |
