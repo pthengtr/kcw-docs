@@ -74,9 +74,140 @@ NoMachine notes that matter on the next box:
 | **GNOME RDP “extend” + iPad native 2388×1668** | Intel dummy would not take that mode; Windows App scaling made the pointer miss. | If you must use RDP, match client resolution to a mode the GPU actually lists (e.g. 1920×1200), not iPad panel size. |
 | **Moonlight / Sunshine** | Not adopted. Fine for video, weak clipboard/files. | Not needed for HQ work. |
 
-**Physical HDMI dummy dongle** is a different idea from the software dummy. We did not keep it. If a future box has no panel at all and you need a persistent GPU output, prefer a **cheap hardware dummy plug**, not kernel EDID hacks.
+**Physical HDMI dummy dongle** is a different idea from the software dummy. We did not keep it. If a future box has no panel at all and you need a persistent GPU output, prefer a **cheap hardware dummy plug**, not kernel EDID hacks. On the reference box (2026-08-22) a dummy HDMI plug on `HDMI-A-3` is fine for headless GPU output while boot stays `multi-user.target`.
 
 GNOME Remote Desktop (RDP, port 3389) may still be installed. **Microsoft Windows App** (formerly Remote Desktop) can talk to it; Jump cannot. Keep RDP off the public internet (UFW allow only `tailscale0`). For daily use, prefer NoMachine + GDM-on-demand rather than keeping a second RDP stack.
+
+---
+
+## UPS (Syndome Claire) + auto power-on
+
+Goal: outage → clean OS shutdown → machine comes back when power returns, including the awkward case where mains returns **while the UPS is still feeding the PSU**.
+
+### Hardware on the reference box (2026-08-22)
+
+| Item | Detail |
+|------|--------|
+| UPS | **Syndome Claire** (line-interactive). Battery bank reports **24 V** → Claire ~1000 class (2×12 V), not 2000. |
+| USB | Appears as **QinHeng CH340** (`1a86:7523`) → `/dev/ttyUSB0` (USB-serial), **not** a HID UPS. |
+| Protocol | Megatec / Q1. Status works (`Q1`, `F`). |
+| Software cut | **Does not work.** Every Megatec shutdown command returns `#-1` (`S.2`, `S01`, `shutdown.return`, etc.). USB is **monitor-only** on this unit. |
+
+Other Syndome models (e.g. Hercules over real RS-232) may behave differently — re-probe before assuming killpower works.
+
+### BIOS (Gigabyte B860M AORUS ELITE — key: **Del**)
+
+| Setting | Value | Why |
+|---------|-------|-----|
+| **AC BACK / Restore AC Power Loss** | **Always On** | After a **real** power cut (UPS goes dark), PSU sees power return → board powers on. |
+| **Resume by Alarm / Power On By RTC** | **Enabled** | Lets Linux `rtcwake` wake from soft-off. |
+| Day / Hour / Min / Sec | Leave defaults (`0`) | This is a **fixed clock schedule**, **not** “N seconds after power off.” Day `0` + time `0:0:0` is usually inert. If Day is “Every day” at midnight, an always-on box ignores it while running. |
+
+Confirm AC BACK with a safe test (no NUT): `shutdown -h now` → unplug **PC cord from UPS** → wait → plug back in → PC should power on alone.
+
+### NUT install (Ubuntu)
+
+```bash
+sudo apt install nut nut-client nut-server
+sudo usermod -aG dialout nut "$USER"   # then re-login for interactive serial tests
+```
+
+`/etc/nut/nut.conf`:
+
+```
+MODE=standalone
+```
+
+`/etc/nut/ups.conf` (example name `claire`):
+
+```
+maxretry = 3
+pollinterval = 2
+
+[claire]
+	driver = blazer_ser
+	port = /dev/ttyUSB0
+	desc = "Syndome Claire"
+	allow_killpower
+	sdcommands = shutdown.return
+```
+
+`/etc/nut/upsd.users` — monitor user needs instant commands (even if this UPS rejects them):
+
+```
+[upsmon]
+	password = <local-random>
+	upsmon master
+	actions = SET
+	instcmds = ALL
+```
+
+Do not commit the password. Generate with `openssl rand -hex 12`.
+
+`/etc/nut/upsmon.conf` (shape):
+
+```
+RUN_AS_USER nut
+MONITOR claire@localhost 1 upsmon <password> master
+MINSUPPLIES 1
+SHUTDOWNCMD "/usr/local/sbin/nut-fsd-shutdown.sh"
+POWERDOWNFLAG /etc/killpower
+FINALDELAY 5
+```
+
+Enable services:
+
+```bash
+sudo systemctl enable --now nut-driver@claire nut-server nut-monitor
+upsc claire@localhost    # expect ups.status OL or OB
+```
+
+Prefer systemd `nut-driver@<name>` over calling `upsdrvctl start` by hand (enumerator conflict).
+
+### FSD shutdown script + RTC backup
+
+Because this Claire **cannot** cut output, a mid-outage restore after soft-off leaves the PSU powered → **AC BACK never fires**. Backup: arm RTC wake before halt.
+
+On the reference box: `/usr/local/sbin/nut-fsd-shutdown.sh`  
+Optional override: `/etc/default/nut-fsd-shutdown` → `RTC_WAKE_SECS=1800` (30 minutes).  
+Log: `/var/log/nut-fsd-shutdown.log`
+
+Script outline:
+
+1. Try `upscmd … shutdown.return` / `upsdrvctl shutdown` (expect fail / `#-1` on Claire).
+2. `rtcwake -m no -s "$RTC_WAKE_SECS"` (set alarm only; do not suspend).
+3. `shutdown -h now`.
+
+Coverage:
+
+| Situation | Who brings the box back |
+|-----------|-------------------------|
+| UPS actually goes dark, then mains returns | BIOS **AC BACK** |
+| Soft-off, UPS still feeding, mains returns (power race) | **RTC wake** (~30 min) |
+| Short outage, never FSD | Box never shut down |
+
+Kernel should show `RTC can wake from S4`. `rtcwake -m no -s 120` must succeed (clear the test alarm afterward).
+
+### Do not do
+
+| Attempt | Result |
+|---------|--------|
+| Expect NUT killpower / `shutdown.return` to darken this Claire | Firmware rejects all `S*` / cut commands (`#-1`). |
+| `POWEROFF_WAIT` in `nut.conf` | After halt, if PSU still live, `nutshutdown` **force-reboots** — looks like “FSD did nothing.” Leave it unset on this box. |
+| Test killpower while UPS still on wall (`OL`) | Many units ignore cut or restore immediately. Test FSD only with `ups.status` = **`OB`**. |
+| Soft-off only, then wait for AC BACK while UPS still on | No AC-loss edge → stuck off until button / RTC. |
+
+### Useful commands
+
+```bash
+upsc claire@localhost ups.status battery.charge ups.load
+# FSD test (will halt the machine — only when OB and you are ready):
+sudo upsmon -c fsd
+# After reboot, see whether RTC was armed / UPS cmds failed:
+sudo cat /var/log/nut-fsd-shutdown.log
+```
+
+Rough runtime at light load (~6% reported): tens of minutes to ~1–2 h depending on Ah / age — not calibrated in NUT (`runtimecal` unset). Prefer a real drain test if you need a number.
 
 ---
 
@@ -247,6 +378,7 @@ Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analyti
 7. Picture share: rclone SMB remote `kss`, user unit `rclone-kss-picture.service`, POSIX `LEGACY_PRODUCT_IMAGE_DIR`.
 8. Enable `kcw-hq-full.timer` (21:00 Asia/Bangkok) only if this box should run HQ B. Keep HQ-PC scheduler until Linux is trusted.
 9. Confirm: `systemctl get-default` is `multi-user.target`; `start gdm` then NoMachine from Windows.
+10. UPS: NUT + `blazer_ser` on `/dev/ttyUSB0` if CH340; BIOS AC BACK Always On + RTC wake Enabled; FSD script with `rtcwake` backup (see [UPS section](#ups-syndome-claire--auto-power-on)). Re-probe killpower — Claire cannot cut output.
 
 ---
 
@@ -300,3 +432,4 @@ Register the runner in both GitHub repos (or the org, limited to these two). LIN
 | 2026-08-15 | kcw-api user units: worker, tiger-pay :8000, stock-check :8787. HQ enqueue prefers `HQ-UBUNTU-SERVER` if live. LINE companion uses same HMAC token as stock-check. |
 | 2026-08-15 | PARTS9 explorer :8788; worker heartbeat `explorer_public_base_url`; LINE `parts9` / `ค้นหา` / `สำรวจ`. Photos from Supabase `pictures/product`. |
 | 2026-08-15 | Daily HQ A/B on this box extracts SYP over Tailscale (`kss-pc`) — no wait on SYP Task Scheduler. |
+| 2026-08-22 | Syndome Claire USB = CH340 `/dev/ttyUSB0`, Megatec status OK, **no** software load-off (`#-1`). NUT FSD + BIOS AC BACK + RTC wake (`rtcwake -m no`) covers real cut and power-race. Do not use `POWEROFF_WAIT`. HDMI dummy on HDMI-A-3 OK with headless boot. |
