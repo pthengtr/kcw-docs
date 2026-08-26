@@ -54,6 +54,30 @@ Self-hosted runner label: **`self-hosted, linux, syp`**. Workflow: `kcw-api/.git
 
 ---
 
+## Firewall (UFW)
+
+Inbound is **deny by default**. Allowed:
+
+| What | Port / rule |
+|------|-------------|
+| SSH | 22/tcp |
+| Tailscale | 41641/udp + all traffic on `tailscale0` |
+| NoMachine | 4000/tcp + 4000/udp |
+| KCW LAN UIs | 8787, 8788, 8790/tcp on **`enp3s0` only** |
+
+KCW on Tailscale (`100.94.98.18:8787` etc.) is reached via the **`tailscale0`** rule, not a separate port rule.
+
+Apply or re-apply (idempotent):
+
+```bash
+bash ~/projects/kcw-api/scripts/syp-linux-firewall.sh
+sudo ufw status verbose
+```
+
+Override LAN interface: `SYP_LAN_IF=wlp2s0 bash …/syp-linux-firewall.sh`.
+
+---
+
 ## kcw-api systemd user units
 
 Not Docker. **Four** units on this box (`Restart=always`, `RestartSec=5`), linger on:
