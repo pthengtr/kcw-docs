@@ -4,7 +4,7 @@ Living notes for the Ubuntu HQ box (`hqadmin`). Use this when setting up **anoth
 
 **Reference machine (2026-08-14):** Ubuntu 26.04 LTS, GNOME 50 / Wayland, user `hqadmin`, Tailscale name `hq-ubuntu-server`.
 
-Repos live as siblings under `~/projects/` (`kcw-api`, `kcw-v2`, `kcw-analytic`, `kcw-docs`).
+Repos live as siblings under `~/projects/` (`kcw-api`, `kcw-v2`, `kcw-analytic`, `kcw-docs`, **`kcw-ask`** — see [KCW Ask POC](#kcw-ask-poc) below).
 
 ---
 
@@ -392,13 +392,14 @@ Not Docker. Four **systemd user** units (`Restart=always`, `RestartSec=5`), ling
 | `kcw-tiger-pay.service` | 8000 | uvicorn `app.main:app` |
 | `kcw-stock-check.service` | 8787 | uvicorn `app.stock_check_app:app` |
 | `kcw-parts9-explorer.service` | 8788 | uvicorn `app.parts9_explorer_app:app` |
+| `kcw-ops.service` | 8790 | uvicorn `app.ops_app:app` |
 
 Repo copies: `~/projects/kcw-api/scripts/systemd/`. Enable:
 
 ```bash
 cp ~/projects/kcw-api/scripts/systemd/kcw-*.service ~/.config/systemd/user/
 systemctl --user daemon-reload
-systemctl --user enable --now kcw-worker kcw-tiger-pay kcw-stock-check kcw-parts9-explorer
+systemctl --user enable --now kcw-worker kcw-tiger-pay kcw-stock-check kcw-parts9-explorer kcw-ops
 journalctl --user -u kcw-worker -f
 ```
 
@@ -410,10 +411,49 @@ LINE `เช็คสต็อก` and `ไทเกอร์` / `tiger pay` pre
 
 CI/CD: self-hosted GitHub runner labeled `self-hosted, linux, hq` on this machine. Workflows:
 
-- kcw-api `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull, pip, restart tiger-pay + stock-check + parts9-explorer; worker left running unless `FORCE_WORKER_RESTART=1`)
+- kcw-api `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull, pip, restart tiger-pay + stock-check + parts9-explorer + ops; worker left running unless `FORCE_WORKER_RESTART=1`)
 - kcw-analytic `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull + pip only)
 
 Register the runner in both GitHub repos (or the org, limited to these two). LINE still deploys on Railway from kcw-api `master`.
+
+---
+
+## KCW Ask (POC)
+
+**Status: proof-of-concept.** Runs on the same HQ box as kcw-api services but lives in a **separate repo** — direction (merge into kcw-api vs stay standalone) is not decided yet.
+
+| Item | Detail |
+|------|--------|
+| Repo | [github.com/pthengtr/kcw-ask](https://github.com/pthengtr/kcw-ask) |
+| Path on box | `~/projects/ask-chat` (folder name predates the repo) |
+| UI unit | `kcw-ask.service` → `:3000` (Node `server.mjs`) |
+| Agent rules | `ASK.md` in that repo (read-only PARTS9 + kcw-docs) |
+| Docs symlink | `ask-chat/kcw-docs` → `~/projects/kcw-docs` |
+
+**What it does today (experimental):**
+
+- **Search mode** — intent slots → flexible PARTS9 `ICMAS` SQL (local LLM for slots when configured; OpenAI fallback).
+- **Ask mode** — warms `cursor-agent --mode ask` against this workspace + kcw-docs; resumes the same session on follow-ups.
+
+**Related units (same repo, not kcw-api):**
+
+| Unit | Port | Role |
+|------|------|------|
+| `parts9-mcp.service` | 8092 | Read-only PARTS9 MCP (`query_hq`, `query_syp`, `list_tables`) for Cursor stdio / HTTP |
+| `parts9-mcp-tunnel.service` | — | OpenAI Secure MCP Tunnel → ChatGPT (optional; needs `mcp/tunnel.env`) |
+
+Both depend on **`owui-sql-tool.service`** (`:8091`, SQL bridge to PARTS9). Unit templates: `~/projects/ask-chat/deploy/systemd/`.
+
+**Not in kcw-api CI/CD.** Deploy manually: pull `kcw-ask`, restart user units. No Railway; LAN/Tailscale only.
+
+**POC open questions (do not treat as settled):**
+
+- Keep separate repo vs move under `kcw-api/`?
+- Search vs ask vs Open WebUI overlap?
+- Who uses it (shop LAN vs remote vs ChatGPT MCP only)?
+- Production auth in front of `:3000`?
+
+When direction is clear, update this section and either wire a deploy workflow or fold into kcw-api docs.
 
 ---
 
@@ -433,3 +473,4 @@ Register the runner in both GitHub repos (or the org, limited to these two). LIN
 | 2026-08-15 | PARTS9 explorer :8788; worker heartbeat `explorer_public_base_url`; LINE `parts9` / `ค้นหา` / `สำรวจ`. Photos from Supabase `pictures/product`. |
 | 2026-08-15 | Daily HQ A/B on this box extracts SYP over Tailscale (`kss-pc`) — no wait on SYP Task Scheduler. |
 | 2026-08-22 | Syndome Claire USB = CH340 `/dev/ttyUSB0`, Megatec status OK, **no** software load-off (`#-1`). NUT FSD + BIOS AC BACK + RTC wake (`rtcwake -m no`) covers real cut and power-race. Do not use `POWEROFF_WAIT`. HDMI dummy on HDMI-A-3 OK with headless boot. |
+| 2026-08-27 | **KCW Ask POC** on `:3000` — separate repo [kcw-ask](https://github.com/pthengtr/kcw-ask) at `~/projects/ask-chat`; optional PARTS9 MCP `:8092` + ChatGPT tunnel. Not in kcw-api deploy; direction TBD. |
