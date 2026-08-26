@@ -32,6 +32,30 @@ Do **not** run this box as `HQ-UBUNTU-SERVER`, enable HQ daily timers, start `kc
 `POS_MSSQL_SERVER` and `PARTS9_SYP_SERVER` on this box: `kss-pc,KSS-PC`.  
 Analytic inventory: `BRANCH=SYP` / `KCW_BRANCH=SYP` so notebook 50 calls `mssql_engine("syp")`.
 
+### Wake-on-LAN (kss-pc / KSS-PC)
+
+Same shop Windows box as PARTS9 SQL. MAC learned from ARP on this LAN (2026-08-27):
+
+| Field | Value |
+|-------|--------|
+| Host | `kss-pc` / `KSS-PC` |
+| LAN IP | `192.168.1.189` |
+| **MAC** | **`6c:0b:5e:47:06:d1`** |
+| Tailscale | `100.68.177.59` |
+| Broadcast | `192.168.1.255` |
+| Send from | `enp3s0` on this box |
+
+When the shop PC is asleep/off and WoL is enabled in BIOS + NIC:
+
+```bash
+bash ~/projects/kcw-api/scripts/wol-kss-pc.sh
+# or manually:
+sudo apt install -y wakeonlan   # once
+wakeonlan -i 192.168.1.255 -p 9 6c:0b:5e:47:06:d1
+```
+
+WoL only works on **LAN** (this box → broadcast). Tailscale cannot carry magic packets. If ARP is empty after long downtime, use the MAC above — do not rely on `ip neigh` alone.
+
 ---
 
 ## Blockers (fill before enable --now)
@@ -75,6 +99,33 @@ sudo ufw status verbose
 ```
 
 Override LAN interface: `SYP_LAN_IF=wlp2s0 bash …/syp-linux-firewall.sh`.
+
+---
+
+## UPS (Syndome Claire) + auto power-on
+
+Same hardware pattern as [HQ Linux](./hq-linux.md#ups-syndome-claire--auto-power-on): **Syndome Claire** over USB-serial (**QinHeng CH340** → `/dev/ttyUSB0`, Megatec/Q1). USB is **monitor-only** — firmware rejects software load-off (`#-1`).
+
+**BIOS (before relying on auto power-on):**
+
+| Setting | Value |
+|---------|-------|
+| **AC BACK / Restore AC Power Loss** | **Always On** |
+| **Power On By RTC** | **Enabled** |
+
+Install / re-apply NUT (idempotent):
+
+```bash
+bash ~/projects/kcw-api/scripts/syp-linux-ups-setup.sh
+upsc claire@localhost ups.status battery.charge ups.load
+systemctl is-active nut-driver@claire nut-server nut-monitor
+```
+
+On outage, `nut-monitor` runs `/usr/local/sbin/nut-fsd-shutdown.sh` (from repo): tries UPS cut commands (expect fail), arms **RTC wake** (~30 min via `/etc/default/nut-fsd-shutdown`), then `shutdown -h now`. Real mains cut → BIOS AC BACK; power-race while UPS still feeding → RTC.
+
+**Do not** set `POWEROFF_WAIT` in `/etc/nut/nut.conf` on this box.
+
+Log after FSD test: `sudo cat /var/log/nut-fsd-shutdown.log`
 
 ---
 
@@ -168,6 +219,8 @@ Picture SMB for product images is HQ-oriented (`rclone-kss-picture` → HQ `KAcc
 4. `systemctl --user enable --now` the four kcw-api units above (**not** tiger-pay); confirm `Restart=always` in each unit.
 5. Heartbeat row `SYP-UBUNTU-SERVER` appears in `ops.worker_heartbeat`.
 6. Ship enqueue preference for `SYP-UBUNTU-SERVER` over `SYP-PC` (kcw-api + kcw-v2 / RPCs), then retire Windows SYP-PC worker.
+7. UFW: `bash ~/projects/kcw-api/scripts/syp-linux-firewall.sh`
+8. UPS: BIOS AC BACK + RTC wake; `bash ~/projects/kcw-api/scripts/syp-linux-ups-setup.sh`; `upsc claire@localhost` shows `OL`.
 
 ---
 
@@ -175,4 +228,5 @@ Picture SMB for product images is HQ-oriented (`rclone-kss-picture` → HQ `KAcc
 
 | Date | What |
 |------|------|
+| 2026-08-27 | UFW hardening, NUT/Claire UPS on `/dev/ttyUSB0`, WoL MAC for `kss-pc`, GitHub Actions deploy verified. |
 | 2026-08-26 | Box hostname/Tailscale `syp-ubuntu-server`; `WORKER_NAME=SYP-UBUNTU-SERVER`; units installed but not started — empty rclone token + placeholder secrets. Linux SYP sync scripts under `worker_tasks/linux/sync_syp_*.sh`. **No** `kcw-hq-full.timer`. **No** `kcw-tiger-pay`. Inventory/stock-check default SQL = **kss-pc** (not HQ `KSS`). |
