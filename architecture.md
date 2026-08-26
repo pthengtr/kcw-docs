@@ -19,7 +19,7 @@ Supabase  raw_kcw → curated_kcw → public / ops / bank / stock
 
 - **kcw-analytics** extracts PARTS9 on shop PCs, writes Drive, loads `raw_kcw`, runs TAR/VAT/bank Excel. Local SQL Server stays on HQ/SYP machines.
 - **kcw-v2** reads `raw_kcw` / `curated_kcw` / app tables via service-role RPCs (`fn_bi_*`, PO, bank). It enqueues PC work on `ops.job_queue`; it does not run PARTS9.
-- **kcw-api** workers on HQ-PC, **HQ-UBUNTU-SERVER** (preferred when live), and SYP-PC poll `ops.job_queue`. LINE product scan is camera / album on the Messaging API webhook (not LIFF). HQ jobs assign to `HQ-UBUNTU-SERVER` if its heartbeat is online, else `HQ-PC`.
+- **kcw-api** workers on HQ-PC, **HQ-UBUNTU-SERVER** (preferred when live), **SYP-PC**, and **SYP-UBUNTU-SERVER** (preferred for SYP when live) poll `ops.job_queue`. LINE product scan is camera / album on the Messaging API webhook (not LIFF). HQ jobs assign to `HQ-UBUNTU-SERVER` if its heartbeat is online, else `HQ-PC`. SYP jobs assign to `SYP-UBUNTU-SERVER` if live, else `SYP-PC`.
 
 ## Auth and jobs
 
