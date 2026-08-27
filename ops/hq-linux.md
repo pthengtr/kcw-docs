@@ -47,6 +47,41 @@ AutomaticLogin=hqadmin
 
 ---
 
+## Wake-on-LAN (HQ LAN)
+
+This box can **send** magic packets to wake machines on `192.168.1.0/24` and can **receive** WoL on wired `enp129s0` (`30:56:0f:7c:4f:15`).
+
+**BIOS:** enable Wake-on-LAN / PCI-E wake on the Gigabyte board (Del at boot → Power Management). Without BIOS WoL, magic packets are ignored when soft-off.
+
+**Receive (reference box 2026-08-27):**
+
+```bash
+sudo ~/projects/kcw-api/scripts/wol/setup-wol-receive.sh   # ethtool wol g + NM + systemd
+systemctl status wol-enp129s0.service
+sudo ethtool enp129s0 | grep -i wake    # expect Wake-on: g
+```
+
+**Send:**
+
+```bash
+wol --list                              # ~/.config/kcw/wol-hosts.conf
+wol kss                                 # wake KSS (192.168.1.99)
+wol hq-ubuntu-server                    # wake this box (from another LAN host)
+wol aa:bb:cc:dd:ee:ff                   # raw MAC
+wol hq-pc -b 192.168.1.255 -n 5         # custom broadcast / repeat count
+```
+
+Host aliases: `kcw-api/scripts/wol/hosts.conf.example` → `~/.config/kcw/wol-hosts.conf`. WoL is **L2 broadcast** — sender must share the target’s LAN (or use a router/subnet relay). Tailscale alone cannot deliver magic packets to a remote shop subnet.
+
+| Alias | MAC | Notes |
+|-------|-----|-------|
+| `hq-ubuntu-server` | `30:56:0f:7c:4f:15` | this box |
+| `kss` | `6c:3c:8c:8a:19:4e` | HQ PARTS9 @ `.99` |
+
+Add `hq-pc`, `syp-ubuntu-server`, etc. when MACs are known (`ip neigh`, `ipconfig /all`).
+
+---
+
 ## Remote access: what actually works
 
 ### Do use
@@ -474,3 +509,4 @@ When direction is clear, update this section and either wire a deploy workflow o
 | 2026-08-15 | Daily HQ A/B on this box extracts SYP over Tailscale (`kss-pc`) — no wait on SYP Task Scheduler. |
 | 2026-08-22 | Syndome Claire USB = CH340 `/dev/ttyUSB0`, Megatec status OK, **no** software load-off (`#-1`). NUT FSD + BIOS AC BACK + RTC wake (`rtcwake -m no`) covers real cut and power-race. Do not use `POWEROFF_WAIT`. HDMI dummy on HDMI-A-3 OK with headless boot. |
 | 2026-08-27 | **KCW Ask POC** on `:3000` — separate repo [kcw-ask](https://github.com/pthengtr/kcw-ask) at `~/projects/ask-chat`; optional PARTS9 MCP `:8092` + ChatGPT tunnel. Not in kcw-api deploy; direction TBD. |
+| 2026-08-27 | Wake-on-LAN: `wol` sender + `wol-enp129s0.service` on wired NIC; host aliases in `~/.config/kcw/wol-hosts.conf`. |
