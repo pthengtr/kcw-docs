@@ -19,8 +19,9 @@ Sibling of the HQ Linux notes: [hq-linux.md](./hq-linux.md). Shared ideas (rclon
 | Drive | rclone Shared drive **KCW-Data** → `~/mnt/gdrive/KCW-Data` |
 | Daily schedules | **None on this box** — do not enable `kcw-hq-full.timer` (HQ B lives on `hq-ubuntu-server`) |
 | Tiger Pay | **Not on this box** — companion / `:8000` stays on HQ (Windows HQ-PC or `hq-ubuntu-server`) |
+| Pay notes / ชำระเจ้าหนี้ (`:8791`) | **Not on this box** — HQ-only (`kcw-pay-notes` on `hq-ubuntu-server`) |
 
-Do **not** run this box as `HQ-UBUNTU-SERVER`, enable HQ daily timers, start `kcw-tiger-pay`, or point stock-check / inventory at HQ `KSS`.
+Do **not** run this box as `HQ-UBUNTU-SERVER`, enable HQ daily timers, start `kcw-tiger-pay` or `kcw-pay-notes`, or point stock-check / inventory at HQ `KSS`.
 
 ### SQL hosts (easy to mix up)
 
@@ -140,7 +141,7 @@ Not Docker. **Four** units on this box (`Restart=always`, `RestartSec=5`), linge
 | `kcw-parts9-explorer.service` | 8788 | uvicorn `app.parts9_explorer_app:app` |
 | `kcw-ops.service` | 8790 | uvicorn `app.ops_app:app` |
 
-**Do not** install or enable `kcw-tiger-pay.service` here (Tiger Pay companion `:8000` is HQ-only).
+**Do not** install or enable `kcw-tiger-pay.service` or `kcw-pay-notes.service` here (Tiger Pay `:8000` and ชำระเจ้าหนี้ `:8791` are **HQ-only**).
 
 ```bash
 cp ~/projects/kcw-api/scripts/systemd/kcw-{worker,stock-check,parts9-explorer,ops}.service ~/.config/systemd/user/
@@ -229,4 +230,5 @@ Picture SMB for product images is HQ-oriented (`rclone-kss-picture` → HQ `KAcc
 | Date | What |
 |------|------|
 | 2026-08-27 | UFW hardening, NUT/Claire UPS on `/dev/ttyUSB0`, WoL MAC for `kss-pc`, GitHub Actions deploy verified. |
+| 2026-08-27 | Documented: do **not** run `kcw-pay-notes` / ชำระเจ้าหนี้ (`:8791`) here — HQ-only. |
 | 2026-08-26 | Box hostname/Tailscale `syp-ubuntu-server`; `WORKER_NAME=SYP-UBUNTU-SERVER`; units installed but not started — empty rclone token + placeholder secrets. Linux SYP sync scripts under `worker_tasks/linux/sync_syp_*.sh`. **No** `kcw-hq-full.timer`. **No** `kcw-tiger-pay`. Inventory/stock-check default SQL = **kss-pc** (not HQ `KSS`). |

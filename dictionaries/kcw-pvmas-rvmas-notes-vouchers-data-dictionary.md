@@ -152,7 +152,9 @@ Full HQ extract (`TABLE_SPECS`) includes `PVMAS` / `RVMAS`. SYP minimal extract 
 
 ---
 
-## 9. Write rules — pay_notes service (Confirmed from live mining 2026-08-27)
+## 9. Write rules — pay_notes / ชำระเจ้าหนี้ (**HQ only**)
+
+LAN service on HQ (`kcw-pay-notes` `:8791`, PARTS9 on `KSS`). **Not deployed on SYP.** See kcw-api [`docs/pay-notes.md`](https://github.com/pthengtr/kcw-api/blob/master/docs/pay-notes.md).
 
 Derived by read-only mining (`scripts/mine_pvmas_write_rules.py`) + schema introspection. **Not** from watching legacy UI.
 
@@ -195,5 +197,5 @@ Gate: `PAY_NOTES_WRITE_ENABLED` must be true; uses `POS_MSSQL_WRITER_*`.
 
 | Date | Change |
 |------|--------|
-| 2026-08-27 | §9 write rules from live KSS mining for `pay_notes` LAN service |
+| 2026-08-27 | §9 marked **HQ-only** (`kcw-pay-notes` :8791); write rules from live KSS mining |
 | 2026-08-16 | Document note-before-voucher on `PVMAS`/`RVMAS`; no note table / no `PVDET`; `PIMAS.NOTENO` + `VOUCNO2` bill links; explorer search rules |
