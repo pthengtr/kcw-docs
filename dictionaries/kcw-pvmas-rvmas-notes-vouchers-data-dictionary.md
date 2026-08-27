@@ -152,8 +152,48 @@ Full HQ extract (`TABLE_SPECS`) includes `PVMAS` / `RVMAS`. SYP minimal extract 
 
 ---
 
+## 9. Write rules — pay_notes service (Confirmed from live mining 2026-08-27)
+
+Derived by read-only mining (`scripts/mine_pvmas_write_rules.py`) + schema introspection. **Not** from watching legacy UI.
+
+### Note create (`PVMAS` INSERT + `PIMAS` UPDATE)
+
+| Field | Value |
+|-------|--------|
+| `JOURTYPE` | `'NP'` |
+| `JOURMODE` | match selected bills (`'1'` / `'2'`); **reject mixed** |
+| `NOTED` / `VOUCED` | `'Y'` / `'N'` |
+| `NOTENO` / `NOTEDATE` | operator free text (≤15) / Bangkok today |
+| `ACCTNO` / `ACCTNAME` | from `APMAS` |
+| `BILLCNT` / `BILLAMT` | bill count / **SUM(`PIMAS.AFTERTAX`)** |
+| `DISCOUNT`, `NETAMT`, `PAYAMT`, `PAID`, `CHKAMT`, `CASHAMT` | **NULL** at note |
+| `DEPTNO` / `BOOKNO` | `'1'` / `'1'` |
+| `POSTED1`, `POSTED2`, `DONE`, `CANCELED` | `'N'` |
+
+`PIMAS`: set `NOTENO`, `NOTEDATE` only; leave unpaid / unvouchered.
+
+### Voucher create (`PVMAS` UPDATE + `PIMAS` stamp + `BPDET` INSERT)
+
+| Field | Value |
+|-------|--------|
+| `VOUCNO` | next `KCPN{YYMM}-###` (Buddhist YY) from `MAX` on prefix |
+| `VOUCED` / `VOUCDATE` | `'Y'` / Bangkok today |
+| `JOURTYPE` | `'CP'` (matches recent vouchered + BPDET) |
+| `DISCOUNT` | optional operator input at voucher time |
+| `NETAMT` / `PAYAMT` / `CHKAMT` | `BILLAMT - DISCOUNT` |
+| `PAID` | `'Y'` |
+
+`PIMAS`: `VOUCNO2`, `VOUCDATE2`, `PAID='Y'`, `PAYSTAT='$'`.
+
+`BPDET` (**operator key-in**, not auto): `JOURTYPE='CP'`, `PAYTYPE` (often `2`), `CHKNO` (e.g. `โอน` or cheque no), `CHKDATE`, `CHKAMT`, `BANKNAME`, `ACCTNO` (bank GL e.g. `2101.7`), `STATUS='='`.
+
+Gate: `PAY_NOTES_WRITE_ENABLED` must be true; uses `POS_MSSQL_WRITER_*`.
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-08-27 | §9 write rules from live KSS mining for `pay_notes` LAN service |
 | 2026-08-16 | Document note-before-voucher on `PVMAS`/`RVMAS`; no note table / no `PVDET`; `PIMAS.NOTENO` + `VOUCNO2` bill links; explorer search rules |
