@@ -1,0 +1,17 @@
+name: SYP Linux deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, syp]
+    steps:
+      - name: Pull kcw-docs on SYP box
+        run: |
+          REPO="${SYP_KCW_DOCS_DIR:-$HOME/projects/kcw-docs}"
+          cd "$REPO"
+          git fetch origin
+          git reset --hard origin/main
+          echo "kcw-docs at $(git rev-parse --short HEAD)"
