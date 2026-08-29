@@ -468,7 +468,7 @@ Register the runner in both GitHub repos (or the org, limited to these two). LIN
 
 **What it does today (experimental):**
 
-- **Search mode** — intent slots → flexible PARTS9 `ICMAS` SQL (local LLM for slots when configured; OpenAI fallback).
+- **Search mode** — intent slots → flexible PARTS9 `ICMAS` SQL (local LLM for slots when configured; OpenAI fallback). Matches **`ACODE`** staff short names (`นมฮPT`, `ลป`, …), Thai sizes, CODE1, BCODE. See [kcw-ask `docs/search.md`](https://github.com/pthengtr/kcw-ask/blob/main/docs/search.md).
 - **Ask mode** — warms `cursor-agent --mode ask` against this workspace + kcw-docs; resumes the same session on follow-ups.
 
 **Related units (same repo, not kcw-api):**

@@ -10,7 +10,7 @@ Sources:
 
 Status legend: **Confirmed** · **TBD** · **Inferred**
 
-Last reviewed: 2026-07-26
+Last reviewed: 2026-08-29
 
 ---
 
@@ -163,8 +163,44 @@ Examples (HQ ICMAS):
 | 01010045 | หม้อลมเบรค | 203-07150B | 01A-BAD146-4B |
 | 01010080 | ซีลล้อหน้า | AAA077-AO | TAY75-115-20.5 |
 
-**BI use:** search / match alternate part numbers; do not use as grain key (use `BCODE`).  
-Still TBD: exact difference vs `OEM` flag / `XCODE` / `ACODE`.
+**BI use:** search / match alternate part numbers; do not use as grain key (use `BCODE`).
+
+---
+
+## 4a. Short names: `ACODE` / `XCODE` (Confirmed)
+
+| Field | Meaning | Status | Notes |
+|-------|---------|--------|-------|
+| **`ACODE`** | **ชื่อย่อ / staff short name** for search & POS | Confirmed | ~115k HQ rows populated. Thai (+ optional Latin brand suffix). Primary key for staff shorthand search in KCW Ask / LINE bot. |
+| **`XCODE`** | Spec / grade code (often viscosity or pack spec) | Confirmed (role) | Examples: `15W-40`, `68-200`. Not the same as `ACODE`; searched as auxiliary text. |
+
+### `ACODE` patterns (Confirmed examples)
+
+| ACODE | DESCR (abbrev) | BRAND | Meaning |
+|-------|----------------|-------|---------|
+| `นมคPT` | น.ม.ค.PTT 15W-40 | PTT | Engine oil + PTT |
+| `นมฮBC` | น.ม.ฮ.บางจาก | BC | Hydraulic + Bangchak |
+| `นมกCT` | น.ม.ก.คาสตรอล | CT | Gear oil + Castrol |
+| `ลป` / `ลปก` | ลูกปืน-related parts | … | Bearing family shorthand |
+| `ยอร` | โอริง-related | … | O-ring family shorthand |
+
+**Oil/fluid ACODE prefix (category `22` usually):**
+
+| Prefix | Thai | Brand suffix (examples) |
+|--------|------|---------------------------|
+| `นมค` | น้ำมันเครื่อง | `PT`=PTT, `BC`=บางจาก, `CT`=Castrol, `SH`=Shell, … |
+| `นมก` | น้ำมันเกียร์ | same pattern |
+| `นมฮ` | น้ำมันไฮดรอลิค | same pattern |
+
+`DESCR` often repeats dotted forms (`น.ม.ฮ.`, `นมก.`) — useful fallback when `ACODE` is blank.
+
+**Search use:** match `ACODE` with prefix (`นมฮ%`) and brand suffix (`%PT%`); also search `DESCR`, `MODEL`, `BRAND`, `PCODE`, `MCODE`, `XCODE`. KCW Ask: `lib/icmas-short-names.mjs`.
+
+```sql
+-- example: hydraulic PTT
+WHERE LTRIM(RTRIM(ACODE)) LIKE N'นมฮ%'
+  AND (LTRIM(RTRIM(ACODE)) LIKE N'%PT%' OR BRAND LIKE N'%PTT%')
+```
 
 ---
 
@@ -272,7 +308,8 @@ Example (`CODE1=C` ซีล): `SIZE1=31`, `SIZE2=46`, `SIZE3=7` → ใน 31 /
 | Field | Meaning | Status |
 |-------|---------|--------|
 | `CODE2` / `CODE3` / `CODE4` | TBD | TBD |
-| `XCODE` / `ACODE` | TBD | TBD |
+| `XCODE` | Spec / grade code (viscosity, pack code) — see §4a | Confirmed |
+| `ACODE` | Staff short name (ชื่อย่อ) — see §4a | Confirmed |
 | `MAIN` / `SUB` / `PART` | Aligns with BCODE structure; names TBD | Inferred |
 | `CATEGORY_CODE` / `left(BCODE,2)` | หมวดสินค้า KACC9 | Confirmed — full legend in §2.1 |
 | `QTYOH2` | Remaining stock in small units (`UI1`); large sale −`MTP2` | Confirmed — §6 |
@@ -291,7 +328,8 @@ Example (`CODE1=C` ซีล): `SIZE1=31`, `SIZE2=46`, `SIZE3=7` → ใน 31 /
 - [x] `QTYOH2` in small units (`UI1`); large-unit sale reduces by `MTP2` — Confirmed §6
 - [ ] `SIZE*` meanings for `CODE1` = `Q`, `R`
 - [ ] Name for rare code `88` (in Drive dim, not in KACC9 list)
-- [ ] Meanings of `CODE2`–`CODE4`, `XCODE`, `ACODE`
+- [ ] Meanings of `CODE2`–`CODE4`
+- [x] `ACODE` = staff short name; `XCODE` = spec/grade code — Confirmed §4a
 - [ ] `UI3`/`UI4`/`MTP3`/`MTP4` and price-tier roles of `PRICE1`…`PRICE5`
 - [ ] Which master to prefer when HQ and SYP ICMAS disagree on the same `BCODE`
 - [ ] Whether to curate `dim_code1` / size labels into Supabase `curated_kcw`
@@ -308,3 +346,4 @@ Example (`CODE1=C` ซีล): `SIZE1=31`, `SIZE2=46`, `SIZE3=7` → ใน 31 /
 | 2026-07-26 | Lock KACC9 หมวดสินค้า names for BCODE first 2 digits | Owner |
 | 2026-07-26 | Lock remaining stock = `QTYOH2` only | Owner |
 | 2026-07-26 | Lock `QTYOH2` = small-unit balance; large sale −`MTP2` | Owner |
+| 2026-08-29 | Lock `ACODE` = staff short name; `XCODE` = spec code — §4a | Owner |
