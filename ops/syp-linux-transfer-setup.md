@@ -8,11 +8,12 @@ Operator runbook: [transfer.md](./transfer.md). Service env reference: kcw-api [
 
 ## What runs automatically (GitHub Actions)
 
-**kcw-api only** — there is **no** GitHub Action for `kcw-docs`.
+**kcw-docs** — same pattern: push to `main` auto-pulls on this box via GitHub Actions (`.github/workflows/syp-linux-deploy.yml`). Manual pull only if the runner is down.
 
 | Repo | Trigger | Runner on this box | Script |
 |------|---------|-------------------|--------|
 | **kcw-api** | push to `master` | `self-hosted, linux, syp` | `scripts/syp-linux-deploy.sh` |
+| **kcw-docs** | push to `main` | `self-hosted, linux, syp` | `git reset --hard origin/main` in `~/projects/kcw-docs` |
 
 Each deploy:
 
@@ -128,14 +129,17 @@ Tailscale access uses the existing `tailscale0` rule (no extra port rule needed)
 
 ---
 
-### 5. Pull kcw-docs (manual — no auto-deploy)
+### 5. kcw-docs (automatic after merge)
+
+On push to `kcw-docs` `main`, GitHub Actions pulls `~/projects/kcw-docs` on this box. After the docs PR merges, the next push (or re-run the workflow) updates the tree.
+
+Manual fallback:
 
 ```bash
-cd ~/projects/kcw-docs
-git fetch origin
-git checkout main
-git pull origin main
+cd ~/projects/kcw-docs && git fetch origin && git reset --hard origin/main
 ```
+
+Or: `bash ~/projects/kcw-docs/scripts/syp-linux-deploy.sh`
 
 Read on this box:
 
@@ -213,3 +217,4 @@ Or manually: `systemctl --user restart kcw-worker kcw-transfer`
 | Date | Change |
 |------|--------|
 | 2026-08-30 | Initial SYP one-time setup for kcw-transfer `:8792` |
+| 2026-08-30 | kcw-docs auto-deploy on `main` (GitHub Actions, same SYP runner as kcw-api) |

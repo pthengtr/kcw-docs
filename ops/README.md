@@ -7,6 +7,6 @@ How we run the **Linux shop boxes**, not business dictionaries.
 | [hq-linux.md](./hq-linux.md) | Ubuntu HQ box (`hqadmin` / `hq-ubuntu-server`): remote access, GDM, UPS, rclone Drive + KSS Picture SMB, HQ B timer, kcw-api units as `HQ-UBUNTU-SERVER` |
 | [syp-linux.md](./syp-linux.md) | Ubuntu SYP box (`sypadmin` / `syp-ubuntu-server`): replaces Windows SYP-PC; `WORKER_NAME=SYP-UBUNTU-SERVER`; no daily timer; no Tiger Pay; rclone + secrets blockers; kcw-api user units |
 | [transfer.md](./transfer.md) | HQ↔SYP stock transfer (`kcw-transfer` `:8792`): operator flow, parallel `/po`, ICLOW stamp, writer flags on both boxes |
-| [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) | **One-time** SYP box steps for `kcw-transfer` (`.env`, systemd, firewall, `git pull` kcw-docs) before/after GitHub Actions deploy |
+| [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) | **One-time** SYP box steps for `kcw-transfer` (`.env`, systemd, firewall); kcw-api + kcw-docs auto-pull via GitHub Actions |
 
 Do not put passwords, `.env` values, or RDP credentials here.

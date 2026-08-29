@@ -1,0 +1,17 @@
+name: HQ Linux deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, linux, hq]
+    steps:
+      - name: Pull kcw-docs on HQ box
+        run: |
+          REPO="${HQ_KCW_DOCS_DIR:-$HOME/projects/kcw-docs}"
+          cd "$REPO"
+          git fetch origin
+          git reset --hard origin/main
+          echo "kcw-docs at $(git rev-parse --short HEAD)"

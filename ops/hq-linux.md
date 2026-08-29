@@ -449,9 +449,10 @@ LINE `เช็คสต็อก` and `ไทเกอร์` / `tiger pay` pre
 CI/CD: self-hosted GitHub runner labeled `self-hosted, linux, hq` on this machine. Workflows:
 
 - kcw-api `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull, pip, restart tiger-pay + stock-check + parts9-explorer + ops + pay-notes + transfer; worker left running unless `FORCE_WORKER_RESTART=1`)
+- kcw-docs `.github/workflows/hq-linux-deploy.yml` → pull `main` in `~/projects/kcw-docs` (dictionaries + ops runbooks)
 - kcw-analytic `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull + pip only)
 
-Register the runner in both GitHub repos (or the org, limited to these two). LINE still deploys on Railway from kcw-api `master`.
+Register the runner for **kcw-api**, **kcw-docs**, and **kcw-analytic** (org-level or per-repo). LINE still deploys on Railway from kcw-api `master`.
 
 ---
 
@@ -514,3 +515,4 @@ When direction is clear, update this section and either wire a deploy workflow o
 | 2026-08-27 | Wake-on-LAN: `wol` sender + `wol-enp129s0.service` on wired NIC; host aliases in `~/.config/kcw/wol-hosts.conf`. |
 | 2026-08-27 | `kcw-pay-notes` `:8791` (ชำระเจ้าหนี้) — **HQ only**; docs in kcw-api `docs/pay-notes.md`. Included in HQ deploy restart. |
 | 2026-08-30 | `kcw-transfer` `:8792` (โอนสินค้า) — HQ prepare (`TRANSFER_SITE=HQ`); SYP box runs same unit with `SYP`. Runbook [transfer.md](./transfer.md). |
+| 2026-08-30 | **kcw-docs** GitHub Actions auto-deploy on `main` (pull only; same `linux+hq` runner). |

@@ -76,7 +76,16 @@ As of 2026-08-26 on this box:
 
 ## GitHub Actions auto-deploy
 
-Self-hosted runner label: **`self-hosted, linux, syp`**. Workflow: `kcw-api/.github/workflows/syp-linux-deploy.yml` → `scripts/syp-linux-deploy.sh` (pull `master`, pip install, restart stock-check + explorer + ops + transfer; worker left running unless `FORCE_WORKER_RESTART=1`).
+Self-hosted runner label: **`self-hosted, linux, syp`**.
+
+| Repo | Branch | Workflow | Script |
+|------|--------|----------|--------|
+| **kcw-api** | `master` | `.github/workflows/syp-linux-deploy.yml` | `scripts/syp-linux-deploy.sh` |
+| **kcw-docs** | `main` | `.github/workflows/syp-linux-deploy.yml` | `scripts/syp-linux-deploy.sh` |
+
+kcw-api deploy: pull `master`, pip install, restart stock-check + explorer + ops + transfer (if unit installed); worker left running unless `FORCE_WORKER_RESTART=1`.
+
+kcw-docs deploy: pull `main` only (no services to restart).
 
 ---
 
@@ -234,4 +243,5 @@ Picture SMB for product images is HQ-oriented (`rclone-kss-picture` → HQ `KAcc
 | 2026-08-27 | UFW hardening, NUT/Claire UPS on `/dev/ttyUSB0`, WoL MAC for `kss-pc`, GitHub Actions deploy verified. |
 | 2026-08-27 | Documented: do **not** run `kcw-pay-notes` / ชำระเจ้าหนี้ (`:8791`) here — HQ-only. |
 | 2026-08-30 | `kcw-transfer` `:8792` (โอนสินค้า) on SYP (`TRANSFER_SITE=SYP`); UFW + deploy include `:8792`. Runbook [transfer.md](./transfer.md). |
+| 2026-08-30 | **kcw-docs** GitHub Actions auto-deploy on `main` (pull only; same `linux+syp` runner). |
 | 2026-08-26 | Box hostname/Tailscale `syp-ubuntu-server`; `WORKER_NAME=SYP-UBUNTU-SERVER`; units installed but not started — empty rclone token + placeholder secrets. Linux SYP sync scripts under `worker_tasks/linux/sync_syp_*.sh`. **No** `kcw-hq-full.timer`. **No** `kcw-tiger-pay`. Inventory/stock-check default SQL = **kss-pc** (not HQ `KSS`). |

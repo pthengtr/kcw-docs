@@ -58,7 +58,7 @@ See [ICLOW dictionary §8 — kcw-transfer stamp](./../dictionaries/kcw-iclow-pe
 
 Pay notes / Tiger Pay stay HQ-only; see [hq-linux.md](./hq-linux.md) and [syp-linux.md](./syp-linux.md).
 
-**SYP box one-time install:** [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) (`.env`, systemd, firewall, manual `kcw-docs` pull). **kcw-api** deploy on SYP is automatic via GitHub Actions; **kcw-docs** is not.
+**SYP box one-time install:** [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) (`.env`, systemd, firewall). **kcw-api** (`master`) and **kcw-docs** (`main`) both auto-pull on SYP via GitHub Actions.
 
 ---
 
