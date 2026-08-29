@@ -20,6 +20,7 @@ Sibling of the HQ Linux notes: [hq-linux.md](./hq-linux.md). Shared ideas (rclon
 | Daily schedules | **None on this box** — do not enable `kcw-hq-full.timer` (HQ B lives on `hq-ubuntu-server`) |
 | Tiger Pay | **Not on this box** — companion / `:8000` stays on HQ (Windows HQ-PC or `hq-ubuntu-server`) |
 | Pay notes / ชำระเจ้าหนี้ (`:8791`) | **Not on this box** — HQ-only (`kcw-pay-notes` on `hq-ubuntu-server`) |
+| Transfer / โอนสินค้า (`:8792`) | **On this box** — `TRANSFER_SITE=SYP` (submit + receive); HQ box prepares TF bills |
 
 Do **not** run this box as `HQ-UBUNTU-SERVER`, enable HQ daily timers, start `kcw-tiger-pay` or `kcw-pay-notes`, or point stock-check / inventory at HQ `KSS`.
 
@@ -69,13 +70,13 @@ As of 2026-08-26 on this box:
 
 **Drive (2026-08-26):** OAuth as `admin@kcw.app` (org-internal client). Mount unit enabled; linger already on.
 
-**Services (2026-08-27):** four kcw-api user units enabled and running on this box.
+**Services (2026-08-27):** four kcw-api user units enabled and running on this box. Add **`kcw-transfer`** (`:8792`) after merge — five units total.
 
 ---
 
 ## GitHub Actions auto-deploy
 
-Self-hosted runner label: **`self-hosted, linux, syp`**. Workflow: `kcw-api/.github/workflows/syp-linux-deploy.yml` → `scripts/syp-linux-deploy.sh` (pull `master`, pip install, restart stock-check + explorer + ops; worker left running unless `FORCE_WORKER_RESTART=1`).
+Self-hosted runner label: **`self-hosted, linux, syp`**. Workflow: `kcw-api/.github/workflows/syp-linux-deploy.yml` → `scripts/syp-linux-deploy.sh` (pull `master`, pip install, restart stock-check + explorer + ops + transfer; worker left running unless `FORCE_WORKER_RESTART=1`).
 
 ---
 
@@ -88,7 +89,7 @@ Inbound is **deny by default**. Allowed:
 | SSH | 22/tcp |
 | Tailscale | 41641/udp + all traffic on `tailscale0` |
 | NoMachine | 4000/tcp + 4000/udp |
-| KCW LAN UIs | 8787, 8788, 8790/tcp on **`enp3s0` only** |
+| KCW LAN UIs | 8787, 8788, 8790, **8792**/tcp on **`enp3s0` only** |
 
 KCW on Tailscale (`100.94.98.18:8787` etc.) is reached via the **`tailscale0`** rule, not a separate port rule.
 
@@ -132,7 +133,7 @@ Log after FSD test: `sudo cat /var/log/nut-fsd-shutdown.log`
 
 ## kcw-api systemd user units
 
-Not Docker. **Four** units on this box (`Restart=always`, `RestartSec=5`), linger on:
+Not Docker. **Five** units on this box after transfer ships (`Restart=always`, `RestartSec=5`), linger on:
 
 | Unit | Port | Command |
 |------|------|---------|
@@ -140,16 +141,17 @@ Not Docker. **Four** units on this box (`Restart=always`, `RestartSec=5`), linge
 | `kcw-stock-check.service` | 8787 | uvicorn `app.stock_check_app:app` |
 | `kcw-parts9-explorer.service` | 8788 | uvicorn `app.parts9_explorer_app:app` |
 | `kcw-ops.service` | 8790 | uvicorn `app.ops_app:app` |
+| `kcw-transfer.service` | 8792 | uvicorn `app.transfer_app:app` (`TRANSFER_SITE=SYP`) — see [transfer.md](./transfer.md) |
 
 **Do not** install or enable `kcw-tiger-pay.service` or `kcw-pay-notes.service` here (Tiger Pay `:8000` and ชำระเจ้าหนี้ `:8791` are **HQ-only**).
 
 ```bash
-cp ~/projects/kcw-api/scripts/systemd/kcw-{worker,stock-check,parts9-explorer,ops}.service ~/.config/systemd/user/
+cp ~/projects/kcw-api/scripts/systemd/kcw-{worker,stock-check,parts9-explorer,ops,transfer}.service ~/.config/systemd/user/
 # Optional: Description=… (SYP-UBUNTU-SERVER) on kcw-worker.service
 systemctl --user daemon-reload
 # Only after secrets + Drive:
 systemctl --user enable --now \
-  kcw-worker kcw-stock-check kcw-parts9-explorer kcw-ops
+  kcw-worker kcw-stock-check kcw-parts9-explorer kcw-ops kcw-transfer
 journalctl --user -u kcw-worker -f
 ```
 
@@ -217,7 +219,7 @@ Picture SMB for product images is HQ-oriented (`rclone-kss-picture` → HQ `KAcc
 1. `rclone config reconnect kcw:` and confirm `ls ~/mnt/gdrive/KCW-Data/kcw_analytics`.
 2. Copy secrets into `kcw-api/.env` and `kcw-analytic/.env` from Drive / Windows SYP-PC (never commit).
 3. Set `STOCK_CHECK_ENABLED=true` once token secret is present.
-4. `systemctl --user enable --now` the four kcw-api units above (**not** tiger-pay); confirm `Restart=always` in each unit.
+4. `systemctl --user enable --now` the five kcw-api units above (**not** tiger-pay or pay-notes); confirm `Restart=always` in each unit.
 5. Heartbeat row `SYP-UBUNTU-SERVER` appears in `ops.worker_heartbeat`.
 6. Ship enqueue preference for `SYP-UBUNTU-SERVER` over `SYP-PC` (kcw-api + kcw-v2 / RPCs), then retire Windows SYP-PC worker.
 7. UFW: `bash ~/projects/kcw-api/scripts/syp-linux-firewall.sh`
@@ -231,4 +233,5 @@ Picture SMB for product images is HQ-oriented (`rclone-kss-picture` → HQ `KAcc
 |------|------|
 | 2026-08-27 | UFW hardening, NUT/Claire UPS on `/dev/ttyUSB0`, WoL MAC for `kss-pc`, GitHub Actions deploy verified. |
 | 2026-08-27 | Documented: do **not** run `kcw-pay-notes` / ชำระเจ้าหนี้ (`:8791`) here — HQ-only. |
+| 2026-08-30 | `kcw-transfer` `:8792` (โอนสินค้า) on SYP (`TRANSFER_SITE=SYP`); UFW + deploy include `:8792`. Runbook [transfer.md](./transfer.md). |
 | 2026-08-26 | Box hostname/Tailscale `syp-ubuntu-server`; `WORKER_NAME=SYP-UBUNTU-SERVER`; units installed but not started — empty rclone token + placeholder secrets. Linux SYP sync scripts under `worker_tasks/linux/sync_syp_*.sh`. **No** `kcw-hq-full.timer`. **No** `kcw-tiger-pay`. Inventory/stock-check default SQL = **kss-pc** (not HQ `KSS`). |

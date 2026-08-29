@@ -429,13 +429,14 @@ Not Docker. Four **systemd user** units (`Restart=always`, `RestartSec=5`), ling
 | `kcw-parts9-explorer.service` | 8788 | uvicorn `app.parts9_explorer_app:app` |
 | `kcw-ops.service` | 8790 | uvicorn `app.ops_app:app` |
 | `kcw-pay-notes.service` | 8791 | uvicorn `app.pay_notes_app:app` — **HQ only** (ชำระเจ้าหนี้); see kcw-api `docs/pay-notes.md` |
+| `kcw-transfer.service` | 8792 | uvicorn `app.transfer_app:app` — **HQ site** (`TRANSFER_SITE=HQ`); see [ops/transfer.md](./transfer.md) |
 
 Repo copies: `~/projects/kcw-api/scripts/systemd/`. Enable:
 
 ```bash
 cp ~/projects/kcw-api/scripts/systemd/kcw-*.service ~/.config/systemd/user/
 systemctl --user daemon-reload
-systemctl --user enable --now kcw-worker kcw-tiger-pay kcw-stock-check kcw-parts9-explorer kcw-ops kcw-pay-notes
+systemctl --user enable --now kcw-worker kcw-tiger-pay kcw-stock-check kcw-parts9-explorer kcw-ops kcw-pay-notes kcw-transfer
 journalctl --user -u kcw-worker -f
 ```
 
@@ -443,11 +444,11 @@ kcw-api venv is Python **3.11** at `~/projects/kcw-api/.venv` (`WORKER_PYTHON` p
 
 HQ jobs: if this worker heartbeat is live, LINE/web assign `HQ-UBUNTU-SERVER`; else `HQ-PC`. Unassigned jobs can still be claimed here. Do not rename this process to `HQ-PC` while Windows is running.
 
-LINE `เช็คสต็อก` and `ไทเกอร์` / `tiger pay` prefer this box’s URLs when the heartbeat is online. Companion on Linux requires the LINE token (`COMPANION_REQUIRE_LINE_AUTH=true`). Pay notes (`ชำระเจ้าหนี้`) is **HQ-only** on `:8791`.
+LINE `เช็คสต็อก` and `ไทเกอร์` / `tiger pay` prefer this box’s URLs when the heartbeat is online. Companion on Linux requires the LINE token (`COMPANION_REQUIRE_LINE_AUTH=true`). Pay notes (`ชำระเจ้าหนี้`) is **HQ-only** on `:8791`. Transfer (`โอนสินค้า`) HQ prepare step on `:8792` (`TRANSFER_SITE=HQ`); SYP runs the same unit on `syp-ubuntu-server` with `TRANSFER_SITE=SYP` — see [transfer.md](./transfer.md).
 
 CI/CD: self-hosted GitHub runner labeled `self-hosted, linux, hq` on this machine. Workflows:
 
-- kcw-api `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull, pip, restart tiger-pay + stock-check + parts9-explorer + ops + pay-notes; worker left running unless `FORCE_WORKER_RESTART=1`)
+- kcw-api `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull, pip, restart tiger-pay + stock-check + parts9-explorer + ops + pay-notes + transfer; worker left running unless `FORCE_WORKER_RESTART=1`)
 - kcw-analytic `.github/workflows/hq-linux-deploy.yml` → `scripts/hq-linux-deploy.sh` (pull + pip only)
 
 Register the runner in both GitHub repos (or the org, limited to these two). LINE still deploys on Railway from kcw-api `master`.
@@ -512,3 +513,4 @@ When direction is clear, update this section and either wire a deploy workflow o
 | 2026-08-27 | **KCW Ask POC** on `:3000` — separate repo [kcw-ask](https://github.com/pthengtr/kcw-ask) at `~/projects/ask-chat`; optional PARTS9 MCP `:8092` + ChatGPT tunnel. Not in kcw-api deploy; direction TBD. |
 | 2026-08-27 | Wake-on-LAN: `wol` sender + `wol-enp129s0.service` on wired NIC; host aliases in `~/.config/kcw/wol-hosts.conf`. |
 | 2026-08-27 | `kcw-pay-notes` `:8791` (ชำระเจ้าหนี้) — **HQ only**; docs in kcw-api `docs/pay-notes.md`. Included in HQ deploy restart. |
+| 2026-08-30 | `kcw-transfer` `:8792` (โอนสินค้า) — HQ prepare (`TRANSFER_SITE=HQ`); SYP box runs same unit with `SYP`. Runbook [transfer.md](./transfer.md). |

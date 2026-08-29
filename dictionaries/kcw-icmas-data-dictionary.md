@@ -271,7 +271,7 @@ Notes:
 
 - Stock is per ICMAS branch master: HQ rows → HQ on-hand; SYP rows → SYP on-hand. Do not mix without labeling branch.
 - Related qty family: `QTYBEG*`, **`QTYMIN`**, `QTYMAX`, `QTYGET`, `QTYPUT`.
-  - **`QTYMIN < 0` (usually `-1`)** — Confirmed operational convention: **do not restock / do not ICLOW**. Stock-check Take N excludes these from routine pools; risk pools may still include them. Not the same as `QTYOH2 < 0` (on-hand anomaly).
+  - **`QTYMIN < 0` (usually `-1`)** — Confirmed operational convention: **do not restock / do not ICLOW**. Stock-check Take N excludes these from routine pools; **kcw-transfer** pick lists exclude them too. Risk pools may still include them. Not the same as `QTYOH2 < 0` (on-hand anomaly). See [ops/transfer.md](../ops/transfer.md).
 
 ---
 

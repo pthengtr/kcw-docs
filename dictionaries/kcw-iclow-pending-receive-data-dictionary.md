@@ -228,10 +228,27 @@ Legacy RPC `fn_po_pending_receive_detail` / `GET /api/po/pending-receive/[docno]
 
 ---
 
-## 8. Changelog
+## 8. kcw-transfer ICLOW stamp (SYP)
+
+When operators use **kcw-transfer** (`:8792`) instead of legacy `/po` ICLOW ordering, optional stamping avoids double-ordering the same BCODE on the old list.
+
+| Event | ICLOW change | When |
+|-------|--------------|------|
+| SYP **submit** | `ORDERED='Y'`, `DOCNO='TRF-{short_id}'`, `DOCDATE=today` | `TRANSFER_ICLOW_STAMP_ENABLED=true` on SYP |
+| SYP **cancel** (no shipment) | `ORDERED='N'`, clear `DOCNO` | same |
+| SYP **receive** | `RECEIVED='Y'`, `RCVDDATE=today`, `RCVDNO=left12(tf_billno)` | after TF receive |
+
+Open row target: `ORDERED='N'`, `RECEIVED='N'`, `CANCELED='N'` for the BCODE on SYP `ICLOW`.
+
+Operator runbook: [ops/transfer.md](../ops/transfer.md). Service enablement: kcw-api [`docs/transfer.md`](https://github.com/pthengtr/kcw-api/blob/master/docs/transfer.md).
+
+---
+
+## 9. Changelog
 
 | Date | Change | By |
 |------|--------|-----|
+| 2026-08-30 | §8 kcw-transfer ICLOW stamp (SYP submit/cancel/receive); link [ops/transfer.md](../ops/transfer.md) | Agent |
 | 2026-08-03 | Link upstream `kcw-analytics/docs/parts9_pending_receive.md` | Agent |
 | 2026-08-02 | HQ implied match: space-normalized BILLNO + `fn_po_docno_key` (PO6907-579 ≡ 6907-579); UI “จับคู่แบบ implied” | Agent |
 | 2026-08-02 | SYP รับบางส่วน: union RCVDNO TF + REMARKS follow-up TF (`fn_po_syp_tf_bills_by_docno`); clear backorder when SIDet covers ordered | Agent |
