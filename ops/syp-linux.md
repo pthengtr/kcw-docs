@@ -20,7 +20,7 @@ Sibling of the HQ Linux notes: [hq-linux.md](./hq-linux.md). Shared ideas (rclon
 | Daily schedules | **None on this box** — do not enable `kcw-hq-full.timer` (HQ B lives on `hq-ubuntu-server`) |
 | Tiger Pay | **Not on this box** — companion / `:8000` stays on HQ (Windows HQ-PC or `hq-ubuntu-server`) |
 | Pay notes / ชำระเจ้าหนี้ (`:8791`) | **Not on this box** — HQ-only (`kcw-pay-notes` on `hq-ubuntu-server`) |
-| Transfer / โอนสินค้า (`:8792`) | **On this box** — `TRANSFER_SITE=SYP` (submit + receive); HQ box prepares TF bills |
+| Transfer / โอนสินค้า (`:8792`) | **On this box** — `TRANSFER_SITE=SYP` (submit + receive); HQ box prepares TF bills. **Setup:** [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) |
 
 Do **not** run this box as `HQ-UBUNTU-SERVER`, enable HQ daily timers, start `kcw-tiger-pay` or `kcw-pay-notes`, or point stock-check / inventory at HQ `KSS`.
 
@@ -70,7 +70,7 @@ As of 2026-08-26 on this box:
 
 **Drive (2026-08-26):** OAuth as `admin@kcw.app` (org-internal client). Mount unit enabled; linger already on.
 
-**Services (2026-08-27):** four kcw-api user units enabled and running on this box. Add **`kcw-transfer`** (`:8792`) after merge — five units total.
+**Services (2026-08-27):** four kcw-api user units enabled and running on this box. Add **`kcw-transfer`** (`:8792`) — follow [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) once, then GitHub Actions keeps code updated on `master` push.
 
 ---
 
