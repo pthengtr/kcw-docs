@@ -91,9 +91,11 @@ TRANSFER_ICLOW_STAMP_ENABLED=false
 ```env
 TRANSFER_PUBLIC_BASE_URL=http://<shop-lan-ip>:8792
 TRANSFER_TAILSCALE_BASE_URL=http://100.94.98.18:8792
+# Peer HQ transfer for live “คงเหลือ สำนักงานใหญ่” (HQ KSS is not on Tailscale)
+TRANSFER_PEER_BASE_URL=http://hq-ubuntu-server:8792
 ```
 
-Use this box’s real LAN IP and Tailscale IP. If omitted, worker may still resolve URLs from heartbeat/env on HQ.
+Use this box’s real LAN IP and Tailscale IP. If omitted, worker may still resolve URLs from heartbeat/env on HQ. Peer defaults to `http://hq-ubuntu-server:8792` when unset.
 
 ---
 

@@ -56,8 +56,8 @@ See [ICLOW dictionary §8 — kcw-transfer stamp](./../dictionaries/kcw-iclow-pe
 
 | Box | Unit | `TRANSFER_SITE` | PARTS9 SQL default | Writer flags |
 |-----|------|-----------------|-------------------|--------------|
-| `hq-ubuntu-server` | `kcw-transfer.service` | `HQ` | `KSS` | `TRANSFER_HQ_SHIP_WRITE_ENABLED`, `TRANSFER_HQ_RECEIVE_WRITE_ENABLED` |
-| `syp-ubuntu-server` | `kcw-transfer.service` | `SYP` | `kss-pc` | `TRANSFER_SYP_SHIP_WRITE_ENABLED`, `TRANSFER_SYP_RECEIVE_WRITE_ENABLED`, `TRANSFER_ICLOW_STAMP_ENABLED` |
+| `hq-ubuntu-server` | `kcw-transfer.service` | `HQ` | `KSS` (+ SYP via `PARTS9_SYP_SERVER=kss-pc`) | `TRANSFER_HQ_SHIP_WRITE_ENABLED`, `TRANSFER_HQ_RECEIVE_WRITE_ENABLED` |
+| `syp-ubuntu-server` | `kcw-transfer.service` | `SYP` | `kss-pc` (HQ stock via peer `TRANSFER_PEER_BASE_URL`) | `TRANSFER_SYP_SHIP_WRITE_ENABLED`, `TRANSFER_SYP_RECEIVE_WRITE_ENABLED`, `TRANSFER_ICLOW_STAMP_ENABLED` |
 
 **Not HQ-only** — unlike pay-notes (`:8791`), transfer runs on **both** Linux boxes.
 
@@ -118,5 +118,6 @@ SYP UFW: allow **8792/tcp** on shop LAN (`scripts/syp-linux-firewall.sh`).
 
 | Date | Change |
 |------|--------|
+| 2026-09-01 | Dual stock: SYP peers HQ via `/transfer/api/local-icmas` when SQL hosts collide (`POS_MSSQL` = `PARTS9_SYP` = kss-pc). `TRANSFER_PEER_BASE_URL` + shared token secret. |
 | 2026-08-30 | Bidirectional HQ↔SYP — direction fields, four-leg SIMAS/PIMAS writers, role-based UI tabs |
 | 2026-08-30 | Initial runbook — kcw-transfer `:8792`, HQ+SYP, parallel `/po`, ICLOW stamp, writer flags |
