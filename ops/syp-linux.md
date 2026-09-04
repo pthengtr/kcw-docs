@@ -17,7 +17,7 @@ Sibling of the HQ Linux notes: [hq-linux.md](./hq-linux.md). Shared ideas (rclon
 | PARTS9 SQL (this box) | Tailscale **`kss-pc`** (shop `KSS-PC`) |
 | HQ PARTS9 | Windows name **`KSS`** — HQ LAN only, **not on Tailscale** |
 | Drive | rclone Shared drive **KCW-Data** → `~/mnt/gdrive/KCW-Data` |
-| Daily schedules | **None on this box** — do not enable `kcw-hq-full.timer` (HQ B lives on `hq-ubuntu-server`) |
+| Daily schedules | **None on this box** for HQ B — do not enable `kcw-hq-full.timer`. **HQ→SYP ICMAS master sync** runs only on HQ (`hq-ubuntu-server`); see [icmas-master-sync.md](./icmas-master-sync.md). |
 | Tiger Pay | **Not on this box** — companion / `:8000` stays on HQ (Windows HQ-PC or `hq-ubuntu-server`) |
 | Pay notes / ชำระเจ้าหนี้ (`:8791`) | **Not on this box** — HQ-only (`kcw-pay-notes` on `hq-ubuntu-server`) |
 | Transfer / โอนสินค้า (`:8792`) | **On this box** — `TRANSFER_SITE=SYP` (submit + receive); HQ box prepares TF bills. **Setup:** [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) |

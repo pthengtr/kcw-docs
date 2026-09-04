@@ -330,8 +330,8 @@ Example (`CODE1=C` ซีล): `SIZE1=31`, `SIZE2=46`, `SIZE3=7` → ใน 31 /
 - [ ] Name for rare code `88` (in Drive dim, not in KACC9 list)
 - [ ] Meanings of `CODE2`–`CODE4`
 - [x] `ACODE` = staff short name; `XCODE` = spec/grade code — Confirmed §4a
+- [x] Which master to prefer when HQ and SYP ICMAS disagree on the same `BCODE` — **HQ is product master** for catalog/price/DESCR (sync: [ops/icmas-master-sync.md](../ops/icmas-master-sync.md)); branch `QTY*` / `LOCATION*` stay per site
 - [ ] `UI3`/`UI4`/`MTP3`/`MTP4` and price-tier roles of `PRICE1`…`PRICE5`
-- [ ] Which master to prefer when HQ and SYP ICMAS disagree on the same `BCODE`
 - [ ] Whether to curate `dim_code1` / size labels into Supabase `curated_kcw`
 
 ---
@@ -347,3 +347,4 @@ Example (`CODE1=C` ซีล): `SIZE1=31`, `SIZE2=46`, `SIZE3=7` → ใน 31 /
 | 2026-07-26 | Lock remaining stock = `QTYOH2` only | Owner |
 | 2026-07-26 | Lock `QTYOH2` = small-unit balance; large sale −`MTP2` | Owner |
 | 2026-08-29 | Lock `ACODE` = staff short name; `XCODE` = spec code — §4a | Owner |
+| 2026-09-05 | Lock HQ as product master vs SYP for catalog attrs; branch stock/bins stay local — see ops/icmas-master-sync | Owner |

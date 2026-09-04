@@ -396,6 +396,7 @@ Extra venv packages vs a thin Windows Anaconda install: `pytz`, `weasyprint`, `o
 | Product image sync | rclone SMB `kss` + Picture mount + `LEGACY_PRODUCT_IMAGE_DIR` POSIX |
 | Manual Linux job scripts | `worker_tasks/linux/*.sh` |
 | Scheduled HQ B | user timer `kcw-hq-full.timer` at 21:00 Asia/Bangkok |
+| HQ→SYP ICMAS master | queue poller `kcw-icmas-master-queue.timer` every 2 min + weekly dry-run `kcw-icmas-master-sync.timer` Sun 05:30 — [icmas-master-sync.md](./icmas-master-sync.md) |
 | Queue worker claiming LINE/web jobs | **Later** — change enqueue `worker_name` + start kcw-api worker |
 
 Pipeline CLI is `python -m src.kcw.pipeline …` from repo root (see kcw-analytic README). Shop BATs stay on Windows Task Scheduler until this box is the worker.
