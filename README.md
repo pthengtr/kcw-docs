@@ -14,6 +14,6 @@ Shared knowledge for the three KCW apps. **Data dictionaries** are the contract 
 - [Architecture](./architecture.md) — how the three repos share Supabase, Drive, LINE, and workers
 - [What lives where](./repos.md)
 - [Ops / Linux HQ-PC](./ops/hq-linux.md) — remote access, GDM on demand, UPS (NUT + AC BACK + RTC wake), kcw-analytics Linux setup, dead ends (Jump, virtual monitor)
-- [Local Qwen3.6 (vLLM)](./ops/local-qwen3.6.md) — DGX Spark endpoint + soak; **agent delegation obsolete** (do not offload Cursor work)
+- [Spark vLLM (Qwen)](./ops/local-qwen3.6.md) — direct API from HQ (`spark-3583:8000`); OpenCode offload obsolete; soak retained
 
 Local clone on this machine: `/home/hqadmin/projects/kcw-docs` (sibling of the three app repos).
