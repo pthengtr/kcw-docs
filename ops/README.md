@@ -8,5 +8,6 @@ How we run the **Linux shop boxes**, not business dictionaries.
 | [syp-linux.md](./syp-linux.md) | Ubuntu SYP box (`sypadmin` / `syp-ubuntu-server`): replaces Windows SYP-PC; `WORKER_NAME=SYP-UBUNTU-SERVER`; no daily timer; no Tiger Pay; rclone + secrets blockers; kcw-api user units |
 | [transfer.md](./transfer.md) | HQ↔SYP stock transfer (`kcw-transfer` `:8792`): operator flow, parallel `/po`, ICLOW stamp, writer flags on both boxes |
 | [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) | **One-time** SYP box steps for `kcw-transfer` (`.env`, systemd, firewall); kcw-api + kcw-docs auto-pull via GitHub Actions |
+| [local-qwen3.6-delegation.md](./local-qwen3.6-delegation.md) | DGX Spark local `qwen3.6-27b` (vLLM): what agents may delegate, math caveats, 6h soak results |
 
 Do not put passwords, `.env` values, or RDP credentials here.
