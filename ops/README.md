@@ -9,6 +9,6 @@ How we run the **Linux shop boxes**, not business dictionaries.
 | [transfer.md](./transfer.md) | HQ↔SYP stock transfer (`kcw-transfer` `:8792`): operator flow, parallel `/po`, ICLOW stamp, writer flags on both boxes |
 | [product-substitutes.md](./product-substitutes.md) | สินค้าทดแทน: live suggestions vs confirmed catalog; Explorer manage; Transfer ส่งแทน |
 | [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) | **One-time** SYP box steps for `kcw-transfer` (`.env`, systemd, firewall); kcw-api + kcw-docs auto-pull via GitHub Actions |
-| [local-qwen3.6-delegation.md](./local-qwen3.6-delegation.md) | DGX Spark local `qwen3.6-27b` (vLLM): what agents may delegate, math caveats, 6h soak results |
+| [local-qwen3.6.md](./local-qwen3.6.md) | DGX Spark local `qwen3.6-27b` (vLLM) ops note — **agent delegation obsolete**; endpoint + soak retained |
 
 Do not put passwords, `.env` values, or RDP credentials here.
