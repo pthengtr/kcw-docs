@@ -49,6 +49,7 @@ See [ICLOW dictionary §8 — kcw-transfer stamp](./../dictionaries/kcw-iclow-pe
 |------|---------|
 | **`QTYMIN = -1`** (or `< 0`) | **Do not restock** — exclude from transfer pick lists and routine ICLOW. See [ICMAS dictionary §6](./../dictionaries/kcw-icmas-data-dictionary.md). |
 | Branch | HQ `ICMAS` = HQ on-hand; SYP `ICMAS` = SYP on-hand — never mix without labeling site. |
+| **สินค้าทดแทน** | Live แนะนำทดแทน vs confirmed catalog **ส่งแทน** — [product-substitutes.md](./product-substitutes.md). |
 
 ---
 
