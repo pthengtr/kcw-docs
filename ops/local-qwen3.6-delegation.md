@@ -1,5 +1,5 @@
 # Moved
 
-Agent **delegation** to local Qwen is **obsolete** and should not be used.
+OpenCode / agent-loop **delegation** is obsolete.
 
-See [local-qwen3.6.md](./local-qwen3.6.md) for the Spark vLLM endpoint / soak reference only.
+Use direct vLLM prompts instead — see [local-qwen3.6.md](./local-qwen3.6.md) (`http://spark-3583:8000/v1` from HQ).

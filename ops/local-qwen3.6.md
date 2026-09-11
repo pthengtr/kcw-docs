@@ -1,45 +1,60 @@
-# Local Qwen3.6-27B (vLLM) — obsolete as agent delegation
+# Spark vLLM (Qwen) — direct API, not OpenCode
 
-**Status (2026-09-11): obsolete.** Do **not** use Cursor / coding-agent “delegation” to this model (or any local Spark model) as a workflow. That pattern did not hold up in practice — keep agent work in Cursor (or the app’s own runtime), not as offloaded OpenCode/Spark jobs.
+**OpenCode / agent-loop offload is obsolete** (2026-09-11). Do not send Cursor work through OpenCode or Ollama-as-agent.
 
-This page is kept only as an **ops / capability reference** for the DGX Spark `vllm-worker` box.
+**OK when you want local help:** one-shot (or short) prompts to the Spark **vLLM** OpenAI-compatible API. Cursor (or your app) still owns file edits, tests, and review.
 
-Tested on the DGX Spark box (`vllm-worker` Docker container) on **2026-09-03/04**.
+Historical capability soak below was run on `qwen3.6-27b` (**2026-09-03/04**). **Always list `/v1/models`** — the loaded model changes (e.g. `qwen3.8-27b` as of 2026-09-11).
 
-| Item | Value |
+## Endpoints
+
+| From | Base URL | Notes |
+|------|----------|--------|
+| **HQ / other LAN boxes** | `http://spark-3583:8000/v1` | Prefer this from `hq-ubuntu-server` |
+| **On the Spark box itself** | `http://127.0.0.1:8000/v1` | Inside `vllm-worker` host network |
+| **HQ localhost `:8000`** | — | **Not vLLM** — Tiger Pay on HQ |
+
+API key: any non-empty string (e.g. `local`).
+
+| Item (soak era) | Value |
 |------|--------|
-| Endpoint | `http://127.0.0.1:8000/v1` |
-| Model id | `qwen3.6-27b` |
-| Weights | `Qwen/Qwen3.6-27B-FP8` |
+| Model id (then) | `qwen3.6-27b` |
+| Weights (then) | `Qwen/Qwen3.6-27B-FP8` |
 | Tools | auto tool choice, parser `qwen3_coder` |
 | Reasoning parser | `qwen3` (thinking **off** by default) |
 | Limits | max model len **98304**, max seqs **4**, batched tokens **8192** |
 | Phase A | **25 pass / 1 partial / 0 fail** (26 probes) |
 | Phase B | **6h soak**, **2037** requests, **0** errors, gold **175/175** |
 
-## How to call it (direct API only)
+## How to call it (direct prompt)
 
-For app or script calls against the local OpenAI-compatible endpoint — **not** for Cursor → OpenCode delegation:
+```bash
+curl -s http://spark-3583:8000/v1/models
+```
 
 ```python
 from openai import OpenAI
 
-client = OpenAI(base_url="http://127.0.0.1:8000/v1", api_key="local")
+client = OpenAI(base_url="http://spark-3583:8000/v1", api_key="local")
 resp = client.chat.completions.create(
-    model="qwen3.6-27b",
-    messages=[...],
-    tools=tools,  # optional
+    model="<id-from-/v1/models>",  # do not hardcode
+    messages=[{"role": "user", "content": "..."}],
     temperature=0.2,
 )
+print(resp.choices[0].message.content)
 ```
+
+On Spark itself, swap the base URL for `http://127.0.0.1:8000/v1`.
 
 Do not assume thinking / reasoning content is enabled (`enable_thinking` defaults false).
 
-## Known caveats (from capability probes)
+## Practice
 
-- Multi-step money / tax arithmetic near-missed once (`21.6` vs correct `22`) — verify numbers if you use this API for finance.
+- Prefer **one clear prompt** (draft code, rewrite, extract, plan). Apply and verify in Cursor.
+- Do **not** wrap calls in OpenCode or a multi-tool agent loop on Spark.
+- Verify money / tax math — soak near-missed once (`21.6` vs `22`).
 - Keep concurrency **≤ 2–3** (server max-num-seqs=4). Soak validated concurrency **1** for hours.
-- **Ops:** if port `8000` RSTs / no GPU load, `docker restart vllm-worker` and wait for `Application startup complete` (~5–10 min). Model load uses ~28.5 GiB GPU.
+- **Ops:** if port `8000` RSTs / no GPU load on Spark, `docker restart vllm-worker` and wait for `Application startup complete` (~5–10 min). Model load uses ~28.5 GiB GPU.
 
 ## Phase A latency (short suite)
 
