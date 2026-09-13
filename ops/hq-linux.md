@@ -372,7 +372,7 @@ This machine’s **gitignored** `kcw-api/.env`:
 
 HQ B on this box is a **systemd user timer** at **21:00 Asia/Bangkok**, after HQ-PC’s daily HQ B (~19:00). Both write the same Drive/Supabase targets so we can compare; turn off HQ-PC Task Scheduler when this box is trusted.
 
-Linux HQ A (`hq_raw.sh`, also the first step of HQ B) extracts **SYP then HQ** (`syp_raw.sh` → `extract --site hq` → `upload-daily-raw`). SYP PARTS9 is `kss-pc:1433` on the tailnet — do **not** wait for the shop PC’s Task Scheduler. If `kss-pc` is offline the step fails (same as a missed SYP BAT).
+Linux HQ A (`hq_raw.sh`, also the first step of HQ B) extracts **SYP then HQ** (`syp_raw.sh` → `extract --site hq` → `upload-daily-raw`). SYP PARTS9 is `kss-pc:1433` on the tailnet — do **not** wait for the shop PC’s Task Scheduler. **Mon–Sat:** if `kss-pc` is offline the step fails (operator sees HQ B failed / summary not generated). **Sunday** (`Asia/Bangkok`): auto-skip SYP and reuse existing `raw_syp_*` on Drive so HQ B continues (shop PC is powered off). Overrides: `KCW_SKIP_SYP=1` / `KCW_FORCE_SYP=1`.
 
 ```bash
 cp scripts/kcw-hq-full.{service,timer} ~/.config/systemd/user/
@@ -517,3 +517,4 @@ When direction is clear, update this section and either wire a deploy workflow o
 | 2026-08-27 | `kcw-pay-notes` `:8791` (ชำระเจ้าหนี้) — **HQ only**; docs in kcw-api `docs/pay-notes.md`. Included in HQ deploy restart. |
 | 2026-08-30 | `kcw-transfer` `:8792` (โอนสินค้า) — HQ prepare (`TRANSFER_SITE=HQ`); SYP box runs same unit with `SYP`. Runbook [transfer.md](./transfer.md). |
 | 2026-08-30 | **kcw-docs** GitHub Actions auto-deploy on `main` (pull only; same `linux+hq` runner). |
+| 2026-09-13 | HQ A/B: Sunday auto-skip SYP extract (`hq_raw.sh`); Mon–Sat still fail hard if `kss-pc` down. |
