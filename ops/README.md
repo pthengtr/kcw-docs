@@ -9,6 +9,7 @@ How we run the **Linux shop boxes**, not business dictionaries.
 | [transfer.md](./transfer.md) | HQ↔SYP stock transfer (`kcw-transfer` `:8792`): operator flow, parallel `/po`, ICLOW stamp, writer flags on both boxes |
 | [product-substitutes.md](./product-substitutes.md) | สินค้าทดแทน: live suggestions vs confirmed catalog; Explorer manage; Transfer ส่งแทน |
 | [syp-linux-transfer-setup.md](./syp-linux-transfer-setup.md) | **One-time** SYP box steps for `kcw-transfer` (`.env`, systemd, firewall); kcw-api + kcw-docs auto-pull via GitHub Actions |
+| [product-insights.md](./product-insights.md) | Product insights: PARTS9 snapshot → Spark → local SQLite → Explorer panel |
 | [local-qwen3.6.md](./local-qwen3.6.md) | Spark vLLM: direct prompts via `spark-3583:8000` (not OpenCode); HQ `:8000` is Tiger Pay; soak retained |
 
 Do not put passwords, `.env` values, or RDP credentials here.
