@@ -60,7 +60,7 @@ When ship-from has `QTYMIN < 0` or insufficient `QTYOH2`, transfer UI shows **�
 ### Prepare ส่งแทน (catalog only)
 
 1. Confirm the peer in a catalog group (Explorer).
-2. On prepare, choose **ส่งแทน {peer}** (peer must be in the same catalog group as the request BCODE).
+2. On prepare, type **รหัสส่งแทน** (peer must be in the same catalog group as the request BCODE). Empty = ship request BCODE.
 3. TF/SIDET deducts **peer** stock; request line `qty_prepared` still bumps on the **original** line.
 4. Receive sees shipped peer with note that it substituted the request SKU.
 
