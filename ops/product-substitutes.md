@@ -57,14 +57,15 @@ API: `/parts9/api/substitutes` — `suggest/{bcode}`, `by-bcode`, groups CRUD. S
 
 When ship-from has `QTYMIN < 0` or insufficient `QTYOH2`, transfer UI shows **แนะนำทดแทน** with dual stock + source badge. No ship change yet.
 
-### Prepare ส่งแทน (catalog only)
+### Prepare ส่งแทน (catalog + confirm)
 
-1. Confirm the peer in a catalog group (Explorer).
-2. On prepare, type **รหัสส่งแทน** (peer must be in the same catalog group as the request BCODE). Empty = ship request BCODE.
-3. TF/SIDET deducts **peer** stock; request line `qty_prepared` still bumps on the **original** line.
-4. Receive sees shipped peer with note that it substituted the request SKU.
+1. On prepare, type **รหัสส่งแทน** (peer BCODE). Empty = ship request BCODE.
+2. If the pair is already in the same catalog group → ship immediately.
+3. If not in catalog (but peer exists on ship-from ICMAS) → UI confirms **เพิ่มเข้า catalog แล้วจัดส่ง**; prepare retries with `confirm_add_catalog=true`.
+4. TF/SIDET deducts **peer** stock; request line `qty_prepared` still bumps on the **original** line.
+5. Receive sees shipped peer with note that it substituted the request SKU.
 
-`ship_as_bcode` that is only a live suggestion (not in catalog) is **rejected**.
+Peers already in a **different** catalog group are rejected (manage in Explorer).
 
 ### Prepare API contract
 
@@ -74,7 +75,8 @@ When ship-from has `QTYMIN < 0` or insufficient `QTYOH2`, transfer UI shows **�
 |-------|---------|
 | `line_id` | Request line (fulfillment bumps this line) |
 | `qty_ship` | Qty on this wave |
-| `ship_as_bcode` | Optional **catalog** peer BCODE; omit/null/same = no substitute |
+| `ship_as_bcode` | Optional peer BCODE; omit/null/same = no substitute |
+| `confirm_add_catalog` | Body flag: after UI confirm, create/link catalog pair then ส่งแทน |
 
 Persistence:
 
