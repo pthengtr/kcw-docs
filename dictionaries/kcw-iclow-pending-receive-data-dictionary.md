@@ -236,9 +236,11 @@ When operators use **kcw-transfer** (`:8792`) instead of legacy `/po` ICLOW orde
 |-------|--------------|------|
 | SYP **submit** | `ORDERED='Y'`, `DOCNO='TRF-{short_id}'`, `DOCDATE=today` | `TRANSFER_ICLOW_STAMP_ENABLED=true` on SYP |
 | SYP **cancel** (no shipment) | `ORDERED='N'`, clear `DOCNO` | same |
-| SYP **receive** | `RECEIVED='Y'`, `RCVDDATE=today`, `RCVDNO=left12(tf_billno)` | after TF receive |
+| SYP **receive** | `RECEIVED='Y'`, `RCVDDATE=today`, `RCVDNO=left12(tf_billno)` | on **any** successful receive qty &gt; 0 (partial or complete; matches PARTS9 §6) |
 
 Open row target: `ORDERED='N'`, `RECEIVED='N'`, `CANCELED='N'` for the BCODE on SYP `ICLOW`.
+
+Do **not** wait for full `qty_requested` before stamping — that left short-ships in ค้างรับ and caused operators to re-order. Remaining need after partial receive is handled by ICMAS low-stock suggest (`QTYOH2 ≤ QTYMIN`), not by leaving `RECEIVED='N'`.
 
 Operator runbook: [ops/transfer.md](../ops/transfer.md). Service enablement: kcw-api [`docs/transfer.md`](https://github.com/pthengtr/kcw-api/blob/master/docs/transfer.md).
 
@@ -248,6 +250,7 @@ Operator runbook: [ops/transfer.md](../ops/transfer.md). Service enablement: kcw
 
 | Date | Change | By |
 |------|--------|-----|
+| 2026-09-15 | §8 receive stamps `RECEIVED='Y'` on any qty &gt; 0 (not full order qty only) | Agent |
 | 2026-08-30 | §8 kcw-transfer ICLOW stamp (SYP submit/cancel/receive); link [ops/transfer.md](../ops/transfer.md) | Agent |
 | 2026-08-03 | Link upstream `kcw-analytics/docs/parts9_pending_receive.md` | Agent |
 | 2026-08-02 | HQ implied match: space-normalized BILLNO + `fn_po_docno_key` (PO6907-579 ≡ 6907-579); UI “จับคู่แบบ implied” | Agent |
