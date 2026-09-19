@@ -136,6 +136,15 @@ WHERE stock_anomaly = 'negative';
 | Queue `pending` / `running` | กำลังสร้าง insight… |
 | Not in movers list | ไม่มีการเคลื่อนไหวใน 5 ปี |
 
+### AP tab (เจ้าหนี้)
+
+Explorer kind **`ap`**: search APMAS → pick vendor → detail shows two lists (**no second Spark pass**):
+
+1. **AI แนะนำสั่ง** — SKUs bought from that AP in the last 12m (snap `pidet`⋈`pimas`), joined to `product_insights` policy + **live** QTYOH; `should_order` uses the same rules as the product insight panel.
+2. **ICLOW** — live ICLOW for `VENDOR=acctno` (รอสั่ง + ค้างรับ). Overlap with AI `should_order` is badged.
+
+APIs: `GET /parts9/api/ap/search`, `GET /parts9/api/ap/{acctno}`. Incomplete insights show as รอ insight until the worker catches up.
+
 Set `PRODUCT_INSIGHTS_DB` in **both** analytic and `kcw-api` `.env` to the same path.
 
 ## Timing (GB10 / qwen3.8-27b)
@@ -148,6 +157,6 @@ ICMAS ~116k · SI∪PI 5y ~**30,925** · 7d movers ~**2,015**
 
 ## Out of scope (this phase)
 
-Supabase mirror · systemd unit (optional later) · separate SYP-labelled insight rows · AR/AP insights
+Supabase mirror · systemd unit (optional later) · separate SYP-labelled insight rows · auto-writing ICLOW/POMAS from the AP tab
 
 SYP **facts** (kss-pc SI/PI) are included in HQ snaps; generation still upserts `site=hq`.
