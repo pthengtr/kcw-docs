@@ -1,8 +1,8 @@
-# Product insights (Spark + local SQLite)
+# Product insights (Spark + Supabase)
 
-HQ pipeline: **snapshot PARTS9 → Spark analysis → local SQLite → Explorer panel**.
+HQ pipeline: **snapshot PARTS9 → Spark analysis → Supabase `product_insight.product_insights` → Explorer panel**.
 
-v2 insights are a **14–30 day standing policy** (demand, safe hold, QTYMIN trigger, typical PO pack, SYP target, trends, margin). Snapshot `QTYOH2` is context only and goes stale — **do not** treat the insight as a live “order now” ticket. **No** auto-PO. **No** Supabase this phase.
+v2 insights are a **14–30 day standing policy** (demand, safe hold, QTYMIN trigger, typical PO pack, SYP target, trends, margin). Snapshot `QTYOH2` is context only and goes stale — **do not** treat the insight as a live “order now” ticket. **No** auto-PO.
 
 ## Where
 
@@ -10,17 +10,20 @@ v2 insights are a **14–30 day standing policy** (demand, safe hold, QTYMIN tri
 |-------|----------|
 | Runner | HQ Ubuntu — `kcw-analytic` CLI |
 | Inference | `http://spark-3583:8000/v1` (list `/v1/models` at runtime) |
-| Insights DB | env `PRODUCT_INSIGHTS_DB` (default under `~/kcw-data/product_insights/insights.sqlite`) |
-| Snapshots | `PRODUCT_INSIGHTS_SNAP_DIR` or sibling `snaps/` next to the DB |
+| Insights | Supabase Postgres, schema `product_insight`, table `product_insights`. Direct pooler connection (`SUPABASE_DB_URL`). Not on the Data API. |
+| Worker queue | Local `~/kcw-data/product_insights/insights.sqlite` — `insight_queue` and `insight_worker_state` only |
+| Snapshots | `PRODUCT_INSIGHTS_SNAP_DIR` or `~/kcw-data/product_insights/snaps/<snap_id>/snapshot.sqlite` |
 | Prompt | `kcw-analytic/prompts/product_insight_v1.yaml` |
-| Explorer | `kcw-api` parts9 explorer — product detail panel |
+| Explorer | `kcw-api` parts9 explorer — product detail panel, read from Supabase |
+
+**Retired:** the `product_insights` table inside local `insights.sqlite`. It stopped on 2026-09-26 (~13k rows) and is not the live set. Count and read insights only from `product_insight.product_insights`. Do not compare that local table to the worker log.
 
 ## Flow
 
 1. Snapshot PARTS9 → local snap (`facts_as_of`). For `--site hq`, default sources are **HQ KSS + SYP kss-pc** SI/PI (tagged `src_site`)
 2. Worker (or one-shot generate) builds ranked eligibility from `--mover-window`
 3. Priority: **never analyzed** → **age ≥ fresh-days** → optional soft refresh
-4. Spark → upsert `product_insights`; queue lease `pending` → `running` → `done`
+4. Spark → upsert Supabase `product_insight.product_insights`; local queue lease `pending` → `running` → `done`
 5. Explorer: ready / working / no 5y movement
 
 ## Continuous worker (recommended)
@@ -94,7 +97,7 @@ PARTS9 has no `BILLTYPE_STD`. Derive from **billno prefix** + `JOURMODE` (+ snap
 
 Fact packs expose `sources`, per-line `SRC_SITE`, `sales_qty_by_src_5y`, `stock` (HQ+SYP QTYOH2/QTYMIN), `purchase_summary`, `margin`, and `derived` (formulas the model must cite).
 
-## Queryable columns (`product_insights`)
+## Queryable columns (`product_insight.product_insights`)
 
 PK stays `(site, bcode)`. Full Thai JSON remains in `insight_json`. Extra columns are for GROUP BY / filters:
 
@@ -117,14 +120,14 @@ PK stays `(site, bcode)`. Full Thai JSON remains in `insight_json`. Extra column
 ```sql
 -- cost up, price not adjusted
 SELECT bcode, margin_pct_12m, cost_change_pct_12m, price_change_pct_12m, summary
-FROM product_insights WHERE margin_flag = 'cost_up_price_lag';
+FROM product_insight.product_insights WHERE margin_flag = 'cost_up_price_lag';
 
 -- declining last 90 days, still ordering
 SELECT bcode, trend_90d, order_ok, sales_qty_90d, sales_qty_12m
-FROM product_insights WHERE trend_90d = 'declining' AND order_ok = 'yes';
+FROM product_insight.product_insights WHERE trend_90d = 'declining' AND order_ok = 'yes';
 
 -- negative stock
-SELECT bcode, qtyoh_hq, qtyoh_syp, stock_anomaly FROM product_insights
+SELECT bcode, qtyoh_hq, qtyoh_syp, stock_anomaly FROM product_insight.product_insights
 WHERE stock_anomaly = 'negative';
 ```
 
@@ -140,12 +143,12 @@ WHERE stock_anomaly = 'negative';
 
 Explorer kind **`ap`**: search APMAS → pick vendor → detail shows two lists (**no second Spark pass**):
 
-1. **AI แนะนำสั่ง** — SKUs bought from that AP in the last 12m (snap `pidet`⋈`pimas`), joined to `product_insights` policy + **live** QTYOH; `should_order` uses the same rules as the product insight panel.
+1. **AI แนะนำสั่ง** — SKUs bought from that AP in the last 12m (snap `pidet`⋈`pimas`), joined to Supabase `product_insight.product_insights` policy + **live** QTYOH; `should_order` uses the same rules as the product insight panel.
 2. **ICLOW** — live ICLOW for `VENDOR=acctno` (รอสั่ง + ค้างรับ). Overlap with AI `should_order` is badged.
 
 APIs: `GET /parts9/api/ap/search`, `GET /parts9/api/ap/{acctno}`. Incomplete insights show as รอ insight until the worker catches up.
 
-Set `PRODUCT_INSIGHTS_DB` in **both** analytic and `kcw-api` `.env` to the same path.
+Explorer loads the insight from Supabase. Local `insights.sqlite` is only the worker queue (`pending` / `running`) and a stale fallback when Supabase has no row for that BCODE. `PRODUCT_INSIGHTS_SNAP_DIR` still points at the PARTS9 snap used for monthly sales.
 
 ## Timing (GB10 / qwen3.8-27b)
 
@@ -157,6 +160,6 @@ ICMAS ~116k · SI∪PI 5y ~**30,925** · 7d movers ~**2,015**
 
 ## Out of scope (this phase)
 
-Supabase mirror · systemd unit (optional later) · separate SYP-labelled insight rows · auto-writing ICLOW/POMAS from the AP tab
+systemd unit (optional later) · separate SYP-labelled insight rows · auto-writing ICLOW/POMAS from the AP tab · copying the retired local `product_insights` rows forward
 
-SYP **facts** (kss-pc SI/PI) are included in HQ snaps; generation still upserts `site=hq`.
+SYP **facts** (kss-pc SI/PI) are included in HQ snaps; generation still upserts `site=hq` in Supabase.
