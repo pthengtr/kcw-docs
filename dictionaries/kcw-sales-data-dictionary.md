@@ -807,6 +807,31 @@ Net income (approx) = gross − app opex only — see kcw-income-data-dictionary
 RPC: public.fn_bi_income_overview → /bi/income
 ```
 
+### 8.8 Online sales margin — Confirmed
+
+Shown on `/bi/sales` when the branch filter is **ทั้งหมด** or **ออนไลน์**. HQ and SYP totals stay revenue-only. This block does not replace `LAST_PURCHASE_COST` on `/bi/income`.
+
+```text
+scope        = revenue bills whose reporting_branch is ONLINE (TAD, CNTAD)
+revenue_net  = bill BEFORETAX (same as §8.2)
+fee_baht     = marketplace deductions linked to those bills
+               (stored expense is negative; the report shows the positive deduction)
+fifo_ext_cost = sum(fifo.sale_cost.fifo_ext_cost) for those bills
+               daily FIFO, ex-VAT, with the PI layers that cost consumed
+profit       = revenue_net − fee_baht − fifo_ext_cost
+margin_pct   = profit / revenue_net
+```
+
+| Rule | Status |
+|------|--------|
+| Fees come from `curated_kcw.online_payout_lines` joined through `online_order_bills` | Confirmed |
+| One order with several bills shares that order's fees by `abs(aftertax)` | Confirmed |
+| Payout lines with no order id (pickup and similar) share across that payout's linked bills the same way | Confirmed |
+| Fee names are the negative statement columns, scaled so they sum to the line's `expense_amount` | Confirmed |
+| Bills with no linked statement stay in revenue and FIFO, with fee 0, and are counted as unlinked | Confirmed |
+| Credit notes `CNTAD` are not expected to have FIFO rows | Confirmed |
+| A bill with any FIFO line whose status is not `OK` counts as partial; its known cost is still included | Confirmed |
+
 ### 8.6 Paid vs credit — TBD
 
 ```text
@@ -884,6 +909,7 @@ Walk-in totals may be reported separately but are outside the ranking set.
 | 2026-08-08 | Exclude `CNTF`/`3CNTF` transfer credit notes from sales revenue; add `fn_bi_sales_bill_excluded_from_revenue`; document curated split guidance | Owner + Cursor |
 | 2026-07-27 | Customer name fallback: party → ARMAS → blank; expose `name_source` | Owner + Cursor |
 | 2026-08-16 | `SIMAS.NOTENO` / `VOUCNO2` are AR note/voucher stamps (same names as `PIMAS`); link PVMAS/RVMAS dictionary | Cursor |
+| 2026-10-26 | Online sales overview adds statement fees per bill and daily FIFO cost (`fn_bi_sales_overview.online_margin`) | Owner + Cursor |
 
 ---
 
