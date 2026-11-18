@@ -193,9 +193,72 @@ Gate: `PAY_NOTES_WRITE_ENABLED` must be true; uses `POS_MSSQL_WRITER_*`.
 
 ---
 
+## 10. Write rules — receive_notes / รับชำระลูกหนี้ (**HQ only**)
+
+LAN service on HQ (`kcw-receive-notes` `:8797`, PARTS9 on `KSS`). **Not deployed on SYP.** See kcw-api [`docs/receive-notes.md`](https://github.com/pthengtr/kcw-api/blob/master/docs/receive-notes.md).
+
+Derived by read-only mining (`scripts/mine_rvmas_write_rules.py`, 2026-11-18) + live `MAX(VOUCNO)`.
+
+### Locked number series
+
+| `JOURMODE` | Meaning | `VOUCNO` / `RCPTNO` | Example |
+|------------|---------|---------------------|---------|
+| `2` | Non-VAT | `{YYMM}-###` (Buddhist YY) | `6911-027` |
+| `1` | VAT | `RC{YYMM}-###` | `RC6911-021` |
+
+Do **not** allocate new `RVI*` / `TR*` series from this service (`RVI*` = legacy VAT; `TR*` = sales/SJ cash register, not AR receipt vouchers).
+
+ใบวางบิล `NOTENO`: `BN{YYMM}-###` (e.g. `BN6911-022`).
+
+### Note create (`RVMAS` INSERT + `SIMAS` UPDATE)
+
+| Field | Value |
+|-------|--------|
+| `JOURTYPE` | `'NR'` |
+| `JOURMODE` | match selected bills (`'1'` / `'2'`); **reject mixed** |
+| `NOTED` / `VOUCED` | `'Y'` / `'N'` |
+| `NOTENO` / `NOTEDATE` | next `BN{YYMM}-###` / Bangkok today |
+| `ACCTNO` / `ACCTNAME` | from `ARMAS` |
+| `BILLCNT` / `BILLAMT` | bill count / **SUM(`SIMAS.AFTERTAX`)** |
+| `DISCOUNT`, `NETAMT`, `PAYAMT`, `PAID`, `CHKAMT`, `CASHAMT`, `VOUCNO` | **NULL** at note |
+| `DEPTNO` / `BOOKNO` | `'1'` / `'1'` |
+| `POSTED1`, `POSTED2`, `DONE`, `CANCELED` | `'N'` |
+
+`SIMAS`: set `NOTENO`, `NOTEDATE` only; leave unpaid / unvouchered. **Does not cut AR.**
+
+### Direct / note→voucher (`RVMAS` + `SIMAS` stamp + `BRDET`)
+
+| Field | Value |
+|-------|--------|
+| `VOUCNO` / `RCPTNO` | next series for `JOURMODE` (above) |
+| `VOUCED` / `VOUCDATE` | `'Y'` / Bangkok today |
+| `JOURTYPE` | `'CR'` |
+| `NETAMT` / `PAYAMT` / `CHKAMT` | amount received (after discount) |
+| `PAID` | `'Y'` |
+| `CASHAMT` | cash portion when cash channel present; else null |
+
+Direct receive (no prior note): INSERT vouchered `RVMAS` (`NOTED` null/`N`, `VOUCED='Y'`).  
+From note: UPDATE note row → voucher (`NR`→`CR`).
+
+`SIMAS` (fully covered bills only): `VOUCNO2`, `VOUCDATE2`, `PAID='Y'`, `PAYSTAT='$'`.  
+Partial allocate: leave bill open; track remainder in Supabase `receive_note` overlay until remaining ≤ 0.
+
+`BRDET` (`JOURTYPE='CR'`, `PAYTYPE` usually `2`, `STATUS='='`):
+
+| Channel | `CHKNO` | `BANKNAME` / `ACCTNO` (GL) |
+|---------|---------|----------------------------|
+| Transfer | `โอน` | company receive account |
+| Cheque | cheque no | bank name; GL optional |
+| Cash | blank / Tiger ref | empty |
+
+Gate: `RECEIVE_NOTES_WRITE_ENABLED`; uses `POS_MSSQL_WRITER_*`. No cancel/void writer in this service.
+
+---
+
 ## Changelog
 
 | Date | Change |
 |------|--------|
+| 2026-11-18 | §10 receive_notes / RVMAS write rules (HQ `:8797`); VOUCNO `RC*` / `YYMM-*`; note `BN*`; `NR`→`CR` |
 | 2026-08-27 | §9 marked **HQ-only** (`kcw-pay-notes` :8791); write rules from live KSS mining |
 | 2026-08-16 | Document note-before-voucher on `PVMAS`/`RVMAS`; no note table / no `PVDET`; `PIMAS.NOTENO` + `VOUCNO2` bill links; explorer search rules |
