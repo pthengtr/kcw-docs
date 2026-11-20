@@ -199,16 +199,16 @@ LAN service on HQ (`kcw-receive-notes` `:8797`, PARTS9 on `KSS`). **Not deployed
 
 Derived by read-only mining (`scripts/mine_rvmas_write_rules.py`, 2026-11-18) + live `MAX(VOUCNO)`.
 
-### Locked number series
+### Locked number series (receive-notes service)
 
-| `JOURMODE` | Meaning | `VOUCNO` / `RCPTNO` | Example |
-|------------|---------|---------------------|---------|
-| `2` | Non-VAT | `{YYMM}-###` (Buddhist YY) | `6911-027` |
-| `1` | VAT | `RC{YYMM}-###` | `RC6911-021` |
+| `JOURMODE` | Meaning | Note `NOTENO` | Voucher `VOUCNO` / `RCPTNO` |
+|------------|---------|---------------|----------------------------|
+| `2` | Non-VAT | `BNN{YYMM}-###` e.g. `BNN6911-001` | `RCN{YYMM}-###` e.g. `RCN6911-001` |
+| `1` | VAT | `BN{YYMM}-###` e.g. `BN6911-001` | `RC{YYMM}-###` e.g. `RC6911-001` |
 
-Do **not** allocate new `RVI*` / `TR*` series from this service (`RVI*` = legacy VAT; `TR*` = sales/SJ cash register, not AR receipt vouchers).
+(Buddhist YY.) Do **not** allocate new `RVI*` / `TR*` series from this service (`RVI*` = legacy VAT; `TR*` = sales/SJ cash register, not AR receipt vouchers). Legacy bare `{YYMM}-###` Non-VAT vouchers may still exist in historical data.
 
-ใบวางบิล `NOTENO`: `BN{YYMM}-###` (e.g. `BN6911-022`).
+Process mirrors pay-notes (note → receive → proof → voucher); voucher is note-first only.
 
 ### Note create (`RVMAS` INSERT + `SIMAS` UPDATE)
 
@@ -217,7 +217,7 @@ Do **not** allocate new `RVI*` / `TR*` series from this service (`RVI*` = legacy
 | `JOURTYPE` | `'NR'` |
 | `JOURMODE` | match selected bills (`'1'` / `'2'`); **reject mixed** |
 | `NOTED` / `VOUCED` | `'Y'` / `'N'` |
-| `NOTENO` / `NOTEDATE` | next `BN{YYMM}-###` / Bangkok today |
+| `NOTENO` / `NOTEDATE` | next `BN…` / `BNN…` by `JOURMODE` / Bangkok today |
 | `ACCTNO` / `ACCTNAME` | from `ARMAS` |
 | `BILLCNT` / `BILLAMT` | bill count / **SUM(`SIMAS.AFTERTAX`)** |
 | `DISCOUNT`, `NETAMT`, `PAYAMT`, `PAID`, `CHKAMT`, `CASHAMT`, `VOUCNO` | **NULL** at note |
