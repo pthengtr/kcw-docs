@@ -201,14 +201,15 @@ Derived by read-only mining (`scripts/mine_rvmas_write_rules.py`, 2026-11-18) + 
 
 ### Locked number series (receive-notes service)
 
-| `JOURMODE` | Meaning | Note `NOTENO` | Voucher `VOUCNO` / `RCPTNO` |
-|------------|---------|---------------|----------------------------|
+| `JOURMODE` / rule | Meaning | Note `NOTENO` | Voucher `VOUCNO` / `RCPTNO` |
+|-------------------|---------|---------------|----------------------------|
 | `2` | Non-VAT | `BNN{YYMM}-###` e.g. `BNN6911-001` | `RCN{YYMM}-###` e.g. `RCN6911-001` |
 | `1` | VAT | `BN{YYMM}-###` e.g. `BN6911-001` | `RC{YYMM}-###` e.g. `RC6911-001` |
+| Marketplace TAD debtors | Online settlement shops (`7LAZ1` `7LAZ2` `7LPNT` `7LICE` `7IAPL` `7SP` `7SPNT` `7SICE` `7IAPS` `7ICE`) | same `BN…` / `BNN…` by `JOURMODE` | `RVI{YYMM}-###` e.g. `RVI6911-001` |
 
-(Buddhist YY.) Do **not** allocate new `RVI*` / `TR*` series from this service (`RVI*` = legacy VAT; `TR*` = sales/SJ cash register, not AR receipt vouchers). Legacy bare `{YYMM}-###` Non-VAT vouchers may still exist in historical data.
+(Buddhist YY.) Do **not** allocate new `TR*` from this service (`TR*` = sales/SJ cash register). `RVI*` is reserved for the marketplace TAD debtor list above (not general VAT). Legacy bare `{YYMM}-###` Non-VAT vouchers may still exist in historical data.
 
-Process mirrors pay-notes (note → receive → proof → voucher); voucher is note-first only.
+Process mirrors pay-notes (note → receive → proof → voucher); voucher is note-first only. **Proof skip:** `RVI…` vouchers and cash settles skip the proof tab and complete immediately.
 
 ### Note create (`RVMAS` INSERT + `SIMAS` UPDATE)
 
